@@ -9,7 +9,13 @@ import { LambdaDocsBuilder } from "@drokt/core";
 import pathnode from "path";
 
 type ReturnAnalysis = {
-  returnStatements: Record<string, string[]>;
+  returnStatements: Record<
+    string,
+    {
+      functionName: string;
+      returns: string[];
+    }
+  >;
 };
 
 export class LambdaFunctionAnalyzer {
