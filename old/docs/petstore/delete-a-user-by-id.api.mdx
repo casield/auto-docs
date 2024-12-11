@@ -1,0 +1,71 @@
+---
+id: delete-a-user-by-id
+title: "Delete a user by ID"
+description: "Deletes a user from the system"
+sidebar_label: "Delete a user by ID"
+hide_title: true
+hide_table_of_contents: true
+api: eJyNU8Fu2zAM/RWBpw3Q4nToSbcCySHAgBXbegpyUCw6FmZJrkgHNQz9+0A7Gbp0BXqyRZnvPT4+T+CQ6ux79imCgQ12yEjKqoEwqyanoLhFRSMxBtDQ22wDMmYCs58g2oBgwDvQ4AWgt9yChozPg8/owHAeUN+w7DYqNTOusIAGqlsMFswEPPYCSJx9PEEpB8GiPkVCkvuv63t5/Iv3JFrdLN0pGuoaiZqh60YoGu7f7YiJVZOG6KAUDQG5TQ4MLEDzrNyCgUpEUjV5V0Qq5vN1+iF3YKBl7slUle39Cl9s6Dtc1SlU5zu4HfwxJzfUclALDhR9C0NsTz6evnwA7ufy6V+sgyyhSbOPnjsxcrsgqIfH3Zv2B0X+eqk4KYchReJsGdX3HqOUXaqHgJHt3KNBZl+671br1VoM7hNxsFFYL3FYUnQN0XFUu80t+QR1ioyRPxK6SygYX7jqO+uj0M6uTZcl7WFeEmgw3sFBQ5uIpTxNR0v4lLtSpPw8YB7B7A8azjZ7exST9hM4T/LuwDS2o9vAvhb76ccl2p/Vmxj/V+elaOMo9tlukBNo+I3j8ueUw+v0bbbftr+2UMof8f45ZA==
+sidebar_class_name: "delete api-method"
+info_path: docs/petstore/example-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Delete a user by ID"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"delete"}
+  path={"/users/{id}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Deletes a user from the system
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"id","in":"path","required":true,"description":"ID of the user","schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"204":{"description":"User deleted successfully"},"404":{"description":"User not found"}}}
+>
+  
+</StatusCodes>
+
+
+      

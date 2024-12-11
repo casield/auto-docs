@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "declaration": true,
+    "esModuleInterop": true,
+    "outDir": "dist"
+  },
+  "include": [
+    "generate/**/*",
+    "generate/types.d.ts"
+  ],
+  "exclude": [".docusaurus", "build"]
+}
