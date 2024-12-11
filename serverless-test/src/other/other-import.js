@@ -8,3 +8,14 @@ export const otherImport = () => {
     }),
   };
 };
+
+export const otherImport2 = () => {
+  console.log("otherImport2");
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify({
+      message: "otherImport2",
+    }),
+  };
+};

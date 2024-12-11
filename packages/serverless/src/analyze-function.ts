@@ -9,8 +9,7 @@ import { LambdaDocsBuilder } from "@drokt/core";
 import pathnode from "path";
 
 type ReturnAnalysis = {
-  returnStatements: string[];
-  finalReturn: string | null;
+  returnStatements: Record<string, string[]>;
 };
 
 export class LambdaFunctionAnalyzer {
@@ -51,9 +50,24 @@ export class LambdaFunctionAnalyzer {
       plugins: ["typescript", "jsx"],
     });
 
-    const returnStatements: string[] = [];
-    let finalReturn: string | null = null;
+    const returnStatements: Record<string, string[]> = {};
     const importMap: Record<string, string> = {};
+
+    const collectReturnStatements = (path: NodePath, functionName: string) => {
+      path.traverse({
+        ReturnStatement(returnPath) {
+          if (returnPath.node.argument) {
+            const returnCode = generator(returnPath.node.argument).code;
+            console.log(`ReturnStatement in ${functionName}:`, returnCode);
+
+            if (!returnStatements[functionName]) {
+              returnStatements[functionName] = [];
+            }
+            returnStatements[functionName].push(returnCode);
+          }
+        },
+      });
+    };
 
     traverse(ast, {
       CallExpression: (path) => {
@@ -71,111 +85,61 @@ export class LambdaFunctionAnalyzer {
 
       FunctionDeclaration: (path) => {
         if (path.node.id?.name === targetFunction) {
-          console.log("Analyzing FunctionDeclaration:", path.node.id.name);
-          path.traverse({
-            ReturnStatement: (returnPath) => {
-              const returnCode = generator(
-                returnPath.node.argument as t.Node
-              ).code;
-              console.log("ReturnStatement:", returnCode);
-              returnStatements.push(returnCode);
-              if (returnPath.getFunctionParent() === path) {
-                finalReturn = returnCode;
-              }
-            },
-          });
+          console.log(`Analyzing FunctionDeclaration: ${path.node.id.name}`);
+          collectReturnStatements(path, path.node.id.name);
         }
       },
 
       AssignmentExpression: (path) => {
-        // Generate code for debugging purposes
-        const code = this.generate(path.node);
-        console.log(`Analyzing AssignmentExpression: ${code}`);
+        const left = path.node.left;
+        const right = path.node.right;
 
-        // Handle `module.exports = function` or `exports.functionName = function`
-        if (
-          t.isMemberExpression(path.node.left) &&
-          t.isIdentifier(path.node.left.object, { name: "module" }) &&
-          t.isIdentifier(path.node.left.property, { name: "exports" }) &&
-          (t.isFunctionExpression(path.node.right) ||
-            t.isArrowFunctionExpression(path.node.right))
-        ) {
-          console.log("Analyzing module.exports function or arrow function");
-          path.get("right").traverse({
-            ReturnStatement(returnPath) {
-              const returnCode = generator(
-                returnPath.node.argument as t.Node
-              ).code;
-              console.log("ReturnStatement in module.exports:", returnCode);
-              returnStatements.push(returnCode);
-              finalReturn = returnCode; // Track the last return
-            },
-          });
-        }
+        const functionName =
+          t.isMemberExpression(left) && t.isIdentifier(left.property)
+            ? left.property.name
+            : "module.exports";
 
-        // Handle `exports.functionName = function`
         if (
-          t.isMemberExpression(path.node.left) &&
-          t.isIdentifier(path.node.left.object, { name: "exports" }) &&
-          t.isIdentifier(path.node.left.property) &&
-          (t.isFunctionExpression(path.node.right) ||
-            t.isArrowFunctionExpression(path.node.right))
+          t.isMemberExpression(left) &&
+          (t.isFunctionExpression(right) || t.isArrowFunctionExpression(right))
         ) {
-          console.log(
-            "Analyzing exports function:",
-            path.node.left.property.name
-          );
-          path.get("right").traverse({
-            ReturnStatement(returnPath) {
-              const returnCode = generator(
-                returnPath.node.argument as t.Node
-              ).code;
-              console.log("ReturnStatement in exports function:", returnCode);
-              returnStatements.push(returnCode);
-              finalReturn = returnCode; // Track the last return
-            },
-          });
+          console.log(`Analyzing ${functionName}`);
+          collectReturnStatements(path.get("right"), functionName);
         }
       },
+
       VariableDeclaration: (path) => {
         path.node.declarations.forEach((declaration) => {
-          // Check if the declaration is an exported arrow function
           if (
             t.isVariableDeclarator(declaration) &&
             t.isIdentifier(declaration.id) &&
             t.isArrowFunctionExpression(declaration.init)
           ) {
-            console.log(
-              `Analyzing exported arrow function: ${declaration.id.name}`
-            );
-            path.get("declarations").forEach((declaratorPath) => {
+            console.log(`Analyzing arrow function: ${declaration.id.name}`);
+            const declaratorPath = path
+              .get("declarations")
+              .find(
+                (d) =>
+                  t.isVariableDeclarator(d.node) &&
+                  t.isIdentifier(d.node.id) &&
+                  t.isIdentifier(declaration.id) &&
+                  d.node.id.name === declaration.id.name
+              );
+            if (declaratorPath) {
               const initPath = declaratorPath.get("init");
-              if (initPath.isArrowFunctionExpression()) {
-                initPath.traverse({
-                  ReturnStatement(returnPath) {
-                    const returnCode = generator(
-                      returnPath.node.argument as t.Node
-                    ).code;
-                    console.log(
-                      `ReturnStatement in exported arrow function ${
-                        t.isIdentifier(declaration.id)
-                          ? declaration.id.name
-                          : "unknown"
-                      }:`,
-                      returnCode
-                    );
-                    returnStatements.push(returnCode);
-                    finalReturn = returnCode; // Track the last return
-                  },
-                });
+              if (initPath && initPath.node) {
+                collectReturnStatements(
+                  initPath as NodePath<t.Node>,
+                  declaration.id.name
+                );
               }
-            });
+            }
           }
         });
       },
     });
 
-    this.results[fileName] = { returnStatements, finalReturn };
+    this.results[fileName] = { returnStatements };
 
     for (const [importedName, importedPath] of Object.entries(importMap)) {
       if (this.zipEntries.some((entry) => entry.entryName === importedPath)) {
@@ -198,10 +162,76 @@ export class LambdaFunctionAnalyzer {
     console.log("Results:");
     console.log(this.results);
 
+    const extractedObjects = this.extractJsonObjects(
+      this.results,
+      handlerFileName
+    );
+    console.log("Extracted JSON Objects:");
+    console.log(extractedObjects);
+
     return this.results;
   }
 
-  private generate(node: t.Node): string {
-    return generator(node).code;
+  private extractJsonObjects(
+    results: Record<string, ReturnAnalysis>,
+    handlerFileName: string
+  ): string[] {
+    const handlerResults = results[handlerFileName];
+    const objects: string[] = [];
+
+    if (handlerResults) {
+      // Iterate through functions in the handler's returnStatements record
+      for (const [functionName, statements] of Object.entries(
+        handlerResults.returnStatements
+      )) {
+        for (const statement of statements) {
+          if (this.isJsonLike(statement)) {
+            objects.push(statement);
+          } else {
+            const resolved = this.resolveReturnStatement(statement, results);
+            if (resolved) objects.push(resolved);
+          }
+        }
+      }
+    }
+
+    return objects;
+  }
+
+  private resolveReturnStatement(
+    statement: string,
+    results: Record<string, ReturnAnalysis>
+  ): string | null {
+    const functionCallMatch = statement.match(/^([a-zA-Z_$][\w$]*)\(\)$/);
+    if (!functionCallMatch) return null;
+
+    const functionName = functionCallMatch[1];
+    console.log(`Resolving function call: ${functionName}`);
+
+    for (const [fileName, analysis] of Object.entries(results)) {
+      if (analysis.returnStatements[functionName]) {
+        const jsonLikeReturn = analysis.returnStatements[functionName].find(
+          (stmt) => this.isJsonLike(stmt)
+        );
+
+        if (jsonLikeReturn) {
+          console.log(`Resolved ${functionName} to: ${jsonLikeReturn}`);
+          return jsonLikeReturn;
+        }
+      }
+    }
+
+    console.log(`Could not resolve ${functionName}`);
+    return null;
+  }
+
+  private isJsonLike(statement: string): boolean {
+    try {
+      // Simple heuristic: try parsing the statement as JSON
+      JSON.parse(statement.replace(/(\w+):/g, '"$1":')); // Convert to JSON-compatible format
+      return true;
+    } catch {
+      return false;
+    }
   }
 }
