@@ -1,6 +1,7 @@
 import Serverless from "serverless";
 import { OpenApiDoc } from "@drokt/openapi-plugin";
 import { LambdaDocsBuilder } from "@drokt/core";
+import { analyzeFunction } from "./analyze-function";
 
 class ServerlessPlugin {
   serverless: Serverless;
@@ -8,6 +9,7 @@ class ServerlessPlugin {
   utils: any;
 
   hooks: { [key: string]: Function };
+  builder: LambdaDocsBuilder<"openApi"> | undefined;
 
   constructor(serverless: Serverless, options: any, utils: any) {
     this.serverless = serverless;
@@ -23,7 +25,7 @@ class ServerlessPlugin {
 
   init() {
     // Initialization
-    const b = new LambdaDocsBuilder({
+    this.builder = new LambdaDocsBuilder({
       name: "My Test Project",
       description: "This is a test project",
       plugins: [OpenApiDoc],
@@ -31,11 +33,21 @@ class ServerlessPlugin {
   }
   beforeDeploy() {
     // Before deploy
+
+    const artifactName = this.serverless.service.package.artifact;
+
+    this.serverless.service.getAllFunctions().forEach((functionName) => {
+      const serverlessFn = this.serverless.service.getFunction(functionName);
+      // TODO: Remove any
+      analyzeFunction(serverlessFn as any, this.builder!, artifactName);
+    });
   }
   afterDeploy() {
     // After deploy
 
-    this.utils.log.info("Deployed successfully");
+    this.builder?.run().then(() => {
+      console.log("Docs built");
+    });
   }
 }
 
