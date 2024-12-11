@@ -13,7 +13,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "serverless": "^4.4.15"
+    "serverless": "^4.4.15",
+    "@drokt/serverless": "1.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.1",

@@ -1,10 +1,15 @@
+import { response } from "@drokt/serverless";
+
 export const mImport = async () => {
   console.log("otherImport");
 
-  return {
-    statusCode: 400,
-    body: JSON.stringify({
-      message: "mImport",
-    }),
-  };
+  return response(
+    400,
+    {},
+    {
+      schema: {
+        message: "nested import",
+      },
+    }
+  );
 };

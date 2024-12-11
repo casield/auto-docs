@@ -2,6 +2,9 @@ import Serverless from "serverless";
 import { OpenApiDoc } from "@drokt/openapi-plugin";
 import { LambdaDocsBuilder } from "@drokt/core";
 import { LambdaFunctionAnalyzer } from "./analyze-function";
+import { response } from "./response";
+
+export * from "./response";
 
 class ServerlessPlugin {
   serverless: Serverless;

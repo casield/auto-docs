@@ -2,6 +2,8 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "sourceMap": true
+    "sourceMap": true,
+    "declaration": true,
+    "target": "ES2016"
   }
 }
