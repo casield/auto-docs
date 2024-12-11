@@ -1,7 +1,9 @@
 const { otherImport } = require("../other/other-import");
 
 exports.hello = async (event) => {
-  otherImport();
+  if (event.queryStringParameters && event.queryStringParameters.other) {
+    return otherImport();
+  }
 
   return {
     statusCode: 200,

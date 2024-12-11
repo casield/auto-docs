@@ -1,7 +1,7 @@
 import Serverless from "serverless";
 import { OpenApiDoc } from "@drokt/openapi-plugin";
 import { LambdaDocsBuilder } from "@drokt/core";
-import { analyzeFunction } from "./analyze-function";
+import { LambdaFunctionAnalyzer } from "./analyze-function";
 
 class ServerlessPlugin {
   serverless: Serverless;
@@ -35,11 +35,12 @@ class ServerlessPlugin {
     // Before deploy
 
     const artifactName = this.serverless.service.package.artifact;
+    const la = new LambdaFunctionAnalyzer(artifactName);
 
     this.serverless.service.getAllFunctions().forEach((functionName) => {
       const serverlessFn = this.serverless.service.getFunction(functionName);
       // TODO: Remove any
-      analyzeFunction(serverlessFn as any, this.builder!, artifactName);
+      la.analyzeFunction(serverlessFn as any, this.builder!);
     });
   }
   afterDeploy() {
