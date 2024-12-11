@@ -1,25 +1,19 @@
-import { PluginBuilder } from "@drokt/core/src/index";
+import { LambdaDocsBuilder } from "@drokt/core/src/index";
 import { OpenApiDoc } from "@drokt/openapi-plugin/src/index";
 import { OtherApiDoc } from "@drokt/other-plugin/src/index";
+import { handler } from "./handlers/ApiGatewayHandler";
 
-const docs = new PluginBuilder({
+const docs = new LambdaDocsBuilder({
   description: "Test",
   name: "Test",
   plugins: [OpenApiDoc, OtherApiDoc],
 });
 
 docs.docs("openApi", {
-  description: "Test",
+  handler: handler,
   name: "Test",
   other: "Test",
   version: "Test",
-});
-
-docs.docs("other", {
-  description: "other",
-  name: "other",
-  other2: "other",
-  version: "other",
 });
 
 docs.run();

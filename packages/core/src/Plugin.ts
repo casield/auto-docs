@@ -1,4 +1,4 @@
-import { PluginBuilder } from ".";
+import { LambdaDocsBuilder } from ".";
 
 export abstract class DroktPlugin<T extends keyof DroktTypes.Plugins> {
   type: T;
@@ -9,16 +9,10 @@ export abstract class DroktPlugin<T extends keyof DroktTypes.Plugins> {
 
   public onBuild(
     docs: DroktTypes.Plugins[T][],
-    builder: PluginBuilder<DroktTypes.AvailablePlugins>
-  ) {
-    throw new Error("Method not implemented.");
-  }
+    builder: LambdaDocsBuilder<DroktTypes.AvailablePlugins>
+  ) {}
 
-  public onInit(builder: PluginBuilder<DroktTypes.AvailablePlugins>) {
-    throw new Error("Method not implemented.");
-  }
+  public onInit(builder: LambdaDocsBuilder<DroktTypes.AvailablePlugins>) {}
 
-  public onEnd(builder: PluginBuilder<DroktTypes.AvailablePlugins>) {
-    throw new Error("Method not implemented.");
-  }
+  public onEnd(builder: LambdaDocsBuilder<DroktTypes.AvailablePlugins>) {}
 }

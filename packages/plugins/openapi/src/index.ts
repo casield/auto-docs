@@ -1,6 +1,6 @@
 import { DroktPlugin } from "@drokt/core/src/Plugin";
 import "./global-types";
-import { PluginBuilder } from "@drokt/core/src";
+import { LambdaDocsBuilder } from "@drokt/core/src";
 
 export class OpenApiDoc extends DroktPlugin<"openApi"> {
   constructor() {
@@ -9,8 +9,10 @@ export class OpenApiDoc extends DroktPlugin<"openApi"> {
 
   public onBuild(
     docs: DroktTypes.IDocsOpenApi[],
-    builder: PluginBuilder<DroktTypes.AvailablePlugins>
+    builder: LambdaDocsBuilder<DroktTypes.AvailablePlugins>
   ): void {
-    docs.forEach((doc) => {});
+    docs.forEach((doc) => {
+      console.log("Building OpenApi docs", doc);
+    });
   }
 }

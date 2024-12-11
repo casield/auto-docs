@@ -1,11 +1,12 @@
 import { DroktPlugin } from "./Plugin";
+import type { Handler } from "aws-lambda";
 
 declare global {
   export namespace DroktTypes {
     export interface IDocs {
       name: string;
-      description: string;
       version: string;
+      handler: Handler;
     }
 
     export interface Plugins {}

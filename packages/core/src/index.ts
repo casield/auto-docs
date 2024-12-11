@@ -1,19 +1,22 @@
 import { DroktPlugin } from "./Plugin";
 import "./types";
 
-export class PluginBuilder<T extends DroktTypes.AvailablePlugins> {
+export class LambdaDocsBuilder<T extends DroktTypes.AvailablePlugins> {
   private config: DroktTypes.DroktConfig<T>;
-
   private _docs: Map<T, DroktTypes.Plugins[T][]> = new Map();
+
+  private plugins: DroktPlugin<T>[] = [];
 
   constructor(config: DroktTypes.DroktConfig<T>) {
     this.config = config;
   }
 
-  private forEachPlugin(callback: (plugin: DroktPlugin<T>) => void): void {
+  private initPlugins(): void {
     this.config.plugins.forEach((plugin) => {
       if (this.isConcretePlugin(plugin)) {
-        callback(new plugin());
+        const instance = new plugin();
+        instance.onInit(this);
+        this.plugins.push(instance);
       } else {
         throw new Error("Plugin is not a concrete subclass of DroktPlugin");
       }
@@ -21,11 +24,9 @@ export class PluginBuilder<T extends DroktTypes.AvailablePlugins> {
   }
 
   public async run() {
-    this.forEachPlugin((plugin) => {
-      plugin.onInit(this);
-    });
+    this.initPlugins();
 
-    this.forEachPlugin((plugin) => {
+    this.plugins.forEach((plugin) => {
       const handlersFilter = this._docs.get(plugin.type);
 
       if (handlersFilter) {
@@ -35,7 +36,7 @@ export class PluginBuilder<T extends DroktTypes.AvailablePlugins> {
       }
     });
 
-    this.forEachPlugin((plugin) => {
+    this.plugins.forEach((plugin) => {
       plugin.onEnd(this);
     });
   }
