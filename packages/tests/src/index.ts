@@ -14,9 +14,4 @@ docs.docs("openApi", {
   version: "Test",
 });
 
-docs.generateDocs([
-  {
-    docs: [{}],
-    path: "/",
-  },
-]);
+docs.generateDocs();
