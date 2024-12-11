@@ -1,12 +1,14 @@
 import { DroktPlugin } from "@drokt/core/src/Plugin";
 import "./global-types";
+import { PluginBuilder } from "@drokt/core/src";
 
 export class OtherApiDoc extends DroktPlugin<"other"> {
   constructor() {
     super("other");
   }
 
-  onBuild(handlers: DroktTypes.IDocsHandler<"other">[]) {
-    console.log("OtherApiDoc", handlers);
-  }
+  public onBuild(
+    docs: DroktTypes.IOtherApi[],
+    builder: PluginBuilder<DroktTypes.AvailablePlugins>
+  ): void {}
 }

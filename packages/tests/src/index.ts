@@ -22,4 +22,4 @@ docs.docs("other", {
   version: "other",
 });
 
-docs.generateDocs();
+docs.run();

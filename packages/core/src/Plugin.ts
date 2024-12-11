@@ -1,3 +1,5 @@
+import { PluginBuilder } from ".";
+
 export abstract class DroktPlugin<T extends keyof DroktTypes.Plugins> {
   type: T;
 
@@ -5,5 +7,18 @@ export abstract class DroktPlugin<T extends keyof DroktTypes.Plugins> {
     this.type = type;
   }
 
-  abstract onBuild(handlers: DroktTypes.IDocsHandler<T>[]): void;
+  public onBuild(
+    docs: DroktTypes.Plugins[T][],
+    builder: PluginBuilder<DroktTypes.AvailablePlugins>
+  ) {
+    throw new Error("Method not implemented.");
+  }
+
+  public onInit(builder: PluginBuilder<DroktTypes.AvailablePlugins>) {
+    throw new Error("Method not implemented.");
+  }
+
+  public onEnd(builder: PluginBuilder<DroktTypes.AvailablePlugins>) {
+    throw new Error("Method not implemented.");
+  }
 }
