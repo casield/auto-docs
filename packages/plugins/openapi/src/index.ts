@@ -1,8 +1,12 @@
+import { DroktPlugin } from "@drokt/core/src/Plugin";
 import "./global-types";
 
-export const openApiDoc: DroktTypes.IDocPluginFn<"openApi"> = () => {
-  return {
-    type: "openApi",
-    onBuild: (handlers) => {},
-  };
-};
+export class OpenApiDoc extends DroktPlugin<"openApi"> {
+  constructor() {
+    super("openApi");
+  }
+
+  onBuild(handlers: DroktTypes.IDocsHandler<"openApi">[]) {
+    console.log("OpenApiDoc", handlers);
+  }
+}

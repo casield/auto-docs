@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "strict": true,
-    "lib": ["ESNext"],
+    "lib": ["ESNext", "DOM"],
     "module": "ES2022",
     "moduleResolution": "bundler"
   }

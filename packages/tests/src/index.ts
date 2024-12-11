@@ -1,10 +1,10 @@
-import { builder } from "@drokt/core/src/index";
-import { openApiDoc } from "@drokt/openapi-plugin/src/index";
+import { PluginBuilder } from "@drokt/core/src/index";
+import { OpenApiDoc } from "@drokt/openapi-plugin/src/index";
 
-const docs = builder({
-  name: "Test",
+const docs = new PluginBuilder({
   description: "Test",
-  plugins: [openApiDoc],
+  name: "Test",
+  plugins: [OpenApiDoc],
 });
 
 docs.docs("openApi", {
@@ -13,3 +13,10 @@ docs.docs("openApi", {
   other: "Test",
   version: "Test",
 });
+
+docs.generateDocs([
+  {
+    docs: [{}],
+    path: "/",
+  },
+]);
