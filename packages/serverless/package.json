@@ -1,0 +1,21 @@
+{
+  "name": "@drokt/serverless",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@drokt/core": "1.0.0",
+    "serverless": "^4.4.15"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@types/serverless": "^3.12.25",
+    "typescript": "^5.7.2"
+  }
+}

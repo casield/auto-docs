@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
+    "outDir": "./dist",
     "strict": true,
     "lib": ["ESNext", "DOM"],
-    "module": "ES2022",
-    "moduleResolution": "bundler",
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
     "esModuleInterop": true
   }
 }

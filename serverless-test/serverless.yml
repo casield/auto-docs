@@ -16,3 +16,6 @@ functions:
       - httpApi:
           path: /
           method: get
+
+plugins:
+  - "../packages/serverless/dist/index.js"
