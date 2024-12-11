@@ -4,7 +4,14 @@ export const otherImport = async () => {
   console.log("otherImport");
 
   if ("true" === "true") {
-    return await otherImport2();
+    return await otherImport2().then((result) => {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: "nested import inside then",
+        }),
+      };
+    });
   }
 
   return {
@@ -20,6 +27,15 @@ export const otherImport2 = async () => {
 
   if ("true" === "true") {
     const result = await mImport();
+
+    if (result.statusCode === 400) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: "nested import",
+        }),
+      };
+    }
 
     return result;
   }

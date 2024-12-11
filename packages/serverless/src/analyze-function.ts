@@ -62,7 +62,46 @@ export class LambdaFunctionAnalyzer {
 
     const isJsonLike = this.isJsonLike;
 
+    const variableAssignments: Record<string, string> = {};
+
+    const collectVariableAssignments = (path: NodePath) => {
+      path.traverse({
+        VariableDeclarator(variablePath) {
+          const variableName = t.isIdentifier(variablePath.node.id)
+            ? variablePath.node.id.name
+            : null;
+          const init = variablePath.node.init;
+
+          if (init && variableName) {
+            const assignmentCode = generator(init).code;
+
+            if (
+              t.isAwaitExpression(init) &&
+              t.isCallExpression(init.argument)
+            ) {
+              if (t.isIdentifier(init.argument.callee)) {
+                variableAssignments[variableName] = init.argument.callee.name;
+              }
+            } else if (
+              t.isCallExpression(init) &&
+              t.isIdentifier(init.callee)
+            ) {
+              variableAssignments[variableName] = init.callee.name;
+            } else if (isJsonLike(assignmentCode)) {
+              variableAssignments[variableName] = assignmentCode;
+            }
+
+            console.log(
+              `Tracked assignment: ${variableName} -> ${assignmentCode}`
+            );
+          }
+        },
+      });
+    };
+
     const collectReturnStatements = (path: NodePath, functionName: string) => {
+      collectVariableAssignments(path); // Track variable assignments in scope
+
       path.traverse({
         ReturnStatement(returnPath) {
           if (returnPath.node.argument) {
@@ -72,8 +111,15 @@ export class LambdaFunctionAnalyzer {
               value: returnCode,
             };
 
-            // Check for AwaitExpression
-            if (t.isAwaitExpression(returnPath.node.argument)) {
+            if (t.isIdentifier(returnPath.node.argument)) {
+              // Resolve variables
+              const variableName = returnPath.node.argument.name;
+              if (variableAssignments[variableName]) {
+                returnCode = variableAssignments[variableName];
+                entry.type = "call"; // Assume variable holds a function call
+                entry.relatedFunction = variableAssignments[variableName];
+              }
+            } else if (t.isAwaitExpression(returnPath.node.argument)) {
               const awaitedExpression = returnPath.node.argument.argument;
               returnCode = generator(awaitedExpression).code;
 
@@ -83,8 +129,6 @@ export class LambdaFunctionAnalyzer {
               ) {
                 entry.type = "call";
                 entry.relatedFunction = awaitedExpression.callee.name;
-              } else if (isJsonLike(returnCode)) {
-                entry.type = "json";
               }
             } else if (t.isCallExpression(returnPath.node.argument)) {
               if (t.isIdentifier(returnPath.node.argument.callee)) {
@@ -278,7 +322,7 @@ export class LambdaFunctionAnalyzer {
 
     if (visited.has(functionName)) {
       console.log(`Circular reference detected for ${functionName}`);
-      return []; // Prevent infinite loops
+      return [];
     }
 
     visited.add(functionName);
