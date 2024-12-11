@@ -35,9 +35,9 @@ export class PluginBuilder<T extends DroktTypes.AvailablePlugins> {
     });
   }
 
-  public docs(
-    type: DroktTypes.AvailablePlugins,
-    docs: DroktTypes.Plugins[DroktTypes.AvailablePlugins]
+  public docs<T extends DroktTypes.AvailablePlugins>(
+    type: T,
+    docs: DroktTypes.Plugins[T]
   ) {
     if (!this._docs.has(type)) {
       this._docs.set(type, []);
