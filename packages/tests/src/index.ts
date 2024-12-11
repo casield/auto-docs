@@ -1,7 +1,6 @@
 import { LambdaDocsBuilder } from "@drokt/core/src/index";
 import { OpenApiDoc } from "@drokt/openapi-plugin/src/index";
 import { OtherApiDoc } from "@drokt/other-plugin/src/index";
-import { handler } from "./handlers/ApiGatewayHandler";
 
 const docs = new LambdaDocsBuilder({
   description: "Test",
@@ -10,10 +9,18 @@ const docs = new LambdaDocsBuilder({
 });
 
 docs.docs("openApi", {
-  handler: handler,
   name: "Test",
-  other: "Test",
-  version: "Test",
+  description: "Test",
+  method: "GET",
+  responses: {
+    "200": {
+      content: {},
+      description: "Success",
+    },
+  },
+  summary: "Test",
+  tags: ["Test"],
+  version: "1",
 });
 
 docs.run();
