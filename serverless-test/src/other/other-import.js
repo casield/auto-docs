@@ -19,7 +19,9 @@ export const otherImport2 = async () => {
   console.log("otherImport2");
 
   if ("true" === "true") {
-    return await mImport();
+    const result = await mImport();
+
+    return result;
   }
 
   return {

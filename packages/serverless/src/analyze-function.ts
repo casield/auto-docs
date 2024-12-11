@@ -121,6 +121,23 @@ export class LambdaFunctionAnalyzer {
           importMap[importPath] = resolvedPath;
         }
       },
+      ImportDeclaration(path) {
+        const source = path.node.source.value;
+        const resolvedPath =
+          pathnode
+            .join(pathnode.dirname(fileName), source)
+            .replace(/\\/g, "/") + ".js";
+
+        path.node.specifiers.forEach((specifier) => {
+          if (t.isImportSpecifier(specifier)) {
+            importMap[specifier.local.name] = resolvedPath;
+          } else if (t.isImportDefaultSpecifier(specifier)) {
+            importMap[specifier.local.name] = resolvedPath;
+          } else if (t.isImportNamespaceSpecifier(specifier)) {
+            importMap[specifier.local.name] = resolvedPath;
+          }
+        });
+      },
 
       FunctionDeclaration: (path) => {
         if (path.node.id?.name === targetFunction) {
