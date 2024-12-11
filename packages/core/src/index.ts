@@ -1,36 +1,27 @@
-import {
-  IDocPluginFn,
-  IDocsHandler,
-  AvailablePlugins,
-  Plugins,
-  PluginConfig,
-} from "./types";
+import "./types";
 
-export const openApiDoc: IDocPluginFn<"openApi"> = () => {
-  return {
-    type: "openApi",
-    onBuild: (handlers) => {},
+export function builder<T extends keyof DroktTypes.Plugins>(
+  config: DroktTypes.PluginConfig<T>
+) {
+  const generateDocs = async <T extends keyof DroktTypes.Plugins>(
+    handlers: DroktTypes.IDocsHandler<T>[]
+  ) => {
+    config.plugins.forEach((plugin) => {
+      const pluginInstance = plugin();
+      const handlersFilter = handlers.filter((handler) =>
+        handler.docs.includes(pluginInstance.type)
+      );
+      pluginInstance.onBuild(handlersFilter);
+    });
   };
-};
 
-export const generateDocs = async (config: {
-  handlers: IDocsHandler<any>[];
-  plugins: IDocPluginFn<any>[];
-}) => {
-  config.plugins.forEach((plugin) => {
-    const pluginInstance = plugin();
-    const handlers = config.handlers.filter((handler) =>
-      handler.docs.includes(pluginInstance.type)
-    );
-    pluginInstance.onBuild(handlers);
-  });
-};
-
-export const docs = <T extends AvailablePlugins>(
-  type: AvailablePlugins,
-  docs: Plugins[T]
-) => {
-  return docs;
-};
-
-export const builder = (config: PluginConfig) => {};
+  return {
+    docs(
+      type: DroktTypes.AvailablePlugins,
+      docs: DroktTypes.Plugins[DroktTypes.AvailablePlugins]
+    ) {
+      return docs;
+    },
+    generateDocs,
+  };
+}
