@@ -36,7 +36,7 @@ export class LambdaFunctionAnalyzer {
     targetFunction: string
   ): ReturnAnalysis {
     if (this.analyzedFiles.has(fileName)) {
-      return this.results[fileName]; // Avoid re-analysis
+      return this.results[fileName];
     }
     this.analyzedFiles.add(fileName);
 
@@ -45,6 +45,7 @@ export class LambdaFunctionAnalyzer {
       throw new Error(`File ${fileName} not found in the artifact.`);
     }
 
+    console.log(`Analyzing file: ${fileName}`);
     const ast = parser.parse(fileContent, {
       sourceType: "module",
       plugins: ["typescript", "jsx"],
@@ -59,37 +60,25 @@ export class LambdaFunctionAnalyzer {
         if (
           t.isIdentifier(path.node.callee) &&
           path.node.callee.name === "require" &&
-          path.node.arguments.length === 1 &&
           t.isStringLiteral(path.node.arguments[0])
         ) {
           const importPath = path.node.arguments[0].value;
           const resolvedPath =
             pathnode.join(pathnode.dirname(fileName), importPath) + ".js";
-          if (t.isVariableDeclarator(path.parent)) {
-            const localName = (path.parent.id as t.ObjectPattern).properties
-              .map((prop) => {
-                const key = (prop as t.ObjectProperty).key;
-                return t.isIdentifier(key) ? key.name : null;
-              })
-              .filter((name): name is string => name !== null)
-              .join(", ");
-            if (localName) {
-              importMap[localName] = resolvedPath;
-            }
-          }
+          importMap[importPath] = resolvedPath;
         }
       },
 
-      FunctionDeclaration: (path: NodePath<t.FunctionDeclaration>) => {
+      FunctionDeclaration: (path) => {
         if (path.node.id?.name === targetFunction) {
+          console.log("Analyzing FunctionDeclaration:", path.node.id.name);
           path.traverse({
-            ReturnStatement: (returnPath: NodePath<t.ReturnStatement>) => {
+            ReturnStatement: (returnPath) => {
               const returnCode = generator(
                 returnPath.node.argument as t.Node
               ).code;
+              console.log("ReturnStatement:", returnCode);
               returnStatements.push(returnCode);
-
-              // Track the final return statement
               if (returnPath.getFunctionParent() === path) {
                 finalReturn = returnCode;
               }
@@ -98,33 +87,62 @@ export class LambdaFunctionAnalyzer {
         }
       },
 
-      ArrowFunctionExpression: (path: NodePath<t.ArrowFunctionExpression>) => {
+      AssignmentExpression: (path) => {
+        // Log the node structure for debugging
+        console.log(
+          "Analyzing AssignmentExpression:",
+          JSON.stringify(path.node, null, 2)
+        );
+
+        // Handle `module.exports = function`
         if (
-          t.isVariableDeclarator(path.parent) &&
-          t.isIdentifier(path.parent.id) &&
-          path.parent.id.name === targetFunction
+          t.isMemberExpression(path.node.left) &&
+          t.isIdentifier(path.node.left.object, { name: "module" }) &&
+          t.isIdentifier(path.node.left.property, { name: "exports" }) &&
+          (t.isFunctionExpression(path.node.right) ||
+            t.isArrowFunctionExpression(path.node.right))
         ) {
-          path.traverse({
-            ReturnStatement: (returnPath: NodePath<t.ReturnStatement>) => {
+          console.log("Analyzing module.exports function or arrow function");
+          path.get("right").traverse({
+            ReturnStatement(returnPath) {
               const returnCode = generator(
                 returnPath.node.argument as t.Node
               ).code;
+              console.log("ReturnStatement in module.exports:", returnCode);
               returnStatements.push(returnCode);
+              finalReturn = returnCode; // Track the last return
+            },
+          });
+        }
 
-              // Track the final return statement
-              if (returnPath.getFunctionParent() === path) {
-                finalReturn = returnCode;
-              }
+        // Handle `exports.functionName = function`
+        if (
+          t.isMemberExpression(path.node.left) &&
+          t.isIdentifier(path.node.left.object, { name: "exports" }) &&
+          t.isIdentifier(path.node.left.property) &&
+          (t.isFunctionExpression(path.node.right) ||
+            t.isArrowFunctionExpression(path.node.right))
+        ) {
+          console.log(
+            "Analyzing exports function:",
+            path.node.left.property.name
+          );
+          path.get("right").traverse({
+            ReturnStatement(returnPath) {
+              const returnCode = generator(
+                returnPath.node.argument as t.Node
+              ).code;
+              console.log("ReturnStatement in exports function:", returnCode);
+              returnStatements.push(returnCode);
+              finalReturn = returnCode; // Track the last return
             },
           });
         }
       },
     });
 
-    // Store results for the current file
     this.results[fileName] = { returnStatements, finalReturn };
 
-    // Recursively analyze imports
     for (const [importedName, importedPath] of Object.entries(importMap)) {
       if (this.zipEntries.some((entry) => entry.entryName === importedPath)) {
         this.analyzeFile(importedPath, importedName);
@@ -147,5 +165,9 @@ export class LambdaFunctionAnalyzer {
     console.log(this.results);
 
     return this.results;
+  }
+
+  private generate(node: t.Node): string {
+    return generator(node).code;
   }
 }
