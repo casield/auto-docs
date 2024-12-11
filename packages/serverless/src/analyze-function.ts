@@ -88,13 +88,11 @@ export class LambdaFunctionAnalyzer {
       },
 
       AssignmentExpression: (path) => {
-        // Log the node structure for debugging
-        console.log(
-          "Analyzing AssignmentExpression:",
-          JSON.stringify(path.node, null, 2)
-        );
+        // Generate code for debugging purposes
+        const code = this.generate(path.node);
+        console.log(`Analyzing AssignmentExpression: ${code}`);
 
-        // Handle `module.exports = function`
+        // Handle `module.exports = function` or `exports.functionName = function`
         if (
           t.isMemberExpression(path.node.left) &&
           t.isIdentifier(path.node.left.object, { name: "module" }) &&
@@ -138,6 +136,42 @@ export class LambdaFunctionAnalyzer {
             },
           });
         }
+      },
+      VariableDeclaration: (path) => {
+        path.node.declarations.forEach((declaration) => {
+          // Check if the declaration is an exported arrow function
+          if (
+            t.isVariableDeclarator(declaration) &&
+            t.isIdentifier(declaration.id) &&
+            t.isArrowFunctionExpression(declaration.init)
+          ) {
+            console.log(
+              `Analyzing exported arrow function: ${declaration.id.name}`
+            );
+            path.get("declarations").forEach((declaratorPath) => {
+              const initPath = declaratorPath.get("init");
+              if (initPath.isArrowFunctionExpression()) {
+                initPath.traverse({
+                  ReturnStatement(returnPath) {
+                    const returnCode = generator(
+                      returnPath.node.argument as t.Node
+                    ).code;
+                    console.log(
+                      `ReturnStatement in exported arrow function ${
+                        t.isIdentifier(declaration.id)
+                          ? declaration.id.name
+                          : "unknown"
+                      }:`,
+                      returnCode
+                    );
+                    returnStatements.push(returnCode);
+                    finalReturn = returnCode; // Track the last return
+                  },
+                });
+              }
+            });
+          }
+        });
       },
     });
 
