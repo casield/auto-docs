@@ -8,8 +8,14 @@ import Serverless from "serverless";
 import { LambdaDocsBuilder } from "@drokt/core";
 import pathnode from "path";
 
+type ReturnStatementEntry = {
+  type: "call" | "json" | "unknown";
+  value: string;
+  relatedFunction?: string;
+};
+
 type ReturnAnalysis = {
-  returnStatements: Record<string, string[]>;
+  returnStatements: Record<string, ReturnStatementEntry[]>;
 };
 
 export class LambdaFunctionAnalyzer {
@@ -35,6 +41,7 @@ export class LambdaFunctionAnalyzer {
     targetFunction: string
   ): ReturnAnalysis {
     if (this.analyzedFiles.has(fileName)) {
+      console.log(`Skipping already analyzed file: ${fileName}`);
       return this.results[fileName];
     }
     this.analyzedFiles.add(fileName);
@@ -50,20 +57,50 @@ export class LambdaFunctionAnalyzer {
       plugins: ["typescript", "jsx"],
     });
 
-    const returnStatements: Record<string, string[]> = {};
+    const returnStatements: Record<string, ReturnStatementEntry[]> = {};
     const importMap: Record<string, string> = {};
+
+    const isJsonLike = this.isJsonLike;
 
     const collectReturnStatements = (path: NodePath, functionName: string) => {
       path.traverse({
         ReturnStatement(returnPath) {
           if (returnPath.node.argument) {
-            const returnCode = generator(returnPath.node.argument).code;
-            console.log(`ReturnStatement in ${functionName}:`, returnCode);
+            let returnCode = generator(returnPath.node.argument).code;
+            const entry: ReturnStatementEntry = {
+              type: "unknown",
+              value: returnCode,
+            };
+
+            // Check for AwaitExpression
+            if (t.isAwaitExpression(returnPath.node.argument)) {
+              const awaitedExpression = returnPath.node.argument.argument;
+              returnCode = generator(awaitedExpression).code;
+
+              if (
+                t.isCallExpression(awaitedExpression) &&
+                t.isIdentifier(awaitedExpression.callee)
+              ) {
+                entry.type = "call";
+                entry.relatedFunction = awaitedExpression.callee.name;
+              } else if (isJsonLike(returnCode)) {
+                entry.type = "json";
+              }
+            } else if (t.isCallExpression(returnPath.node.argument)) {
+              if (t.isIdentifier(returnPath.node.argument.callee)) {
+                entry.type = "call";
+                entry.relatedFunction = returnPath.node.argument.callee.name;
+              }
+            } else if (isJsonLike(returnCode)) {
+              entry.type = "json";
+            }
+
+            console.log(`ReturnStatement in ${functionName}:`, entry);
 
             if (!returnStatements[functionName]) {
               returnStatements[functionName] = [];
             }
-            returnStatements[functionName].push(returnCode);
+            returnStatements[functionName].push(entry);
           }
         },
       });
@@ -78,7 +115,9 @@ export class LambdaFunctionAnalyzer {
         ) {
           const importPath = path.node.arguments[0].value;
           const resolvedPath =
-            pathnode.join(pathnode.dirname(fileName), importPath) + ".js";
+            pathnode
+              .join(pathnode.dirname(fileName), importPath)
+              .replace(/\\/g, "/") + ".js";
           importMap[importPath] = resolvedPath;
         }
       },
@@ -177,58 +216,92 @@ export class LambdaFunctionAnalyzer {
     handlerFileName: string
   ): string[] {
     const handlerResults = results[handlerFileName];
-    const objects: string[] = [];
+    const resolvedObjects: string[] = [];
+    const resolutionCache: Record<string, string[]> = {};
 
-    if (handlerResults) {
-      // Iterate through functions in the handler's returnStatements record
-      for (const [functionName, statements] of Object.entries(
-        handlerResults.returnStatements
-      )) {
-        for (const statement of statements) {
-          if (this.isJsonLike(statement)) {
-            objects.push(statement);
-          } else {
-            const resolved = this.resolveReturnStatement(statement, results);
-            if (resolved) objects.push(resolved);
+    if (!handlerResults) {
+      console.log(`No handler results found for file: ${handlerFileName}`);
+      return resolvedObjects;
+    }
+
+    for (const [functionName, statements] of Object.entries(
+      handlerResults.returnStatements
+    )) {
+      for (const entry of statements) {
+        if (entry.type === "unknown") {
+          console.log(`Adding JSON-like object directly: ${entry.value}`);
+          resolvedObjects.push(entry.value);
+        } else if (entry.type === "call" && entry.relatedFunction) {
+          if (!resolutionCache[entry.relatedFunction]) {
+            resolutionCache[entry.relatedFunction] =
+              this.resolveReturnStatements(entry.relatedFunction, results) ||
+              [];
+          }
+
+          if (resolutionCache[entry.relatedFunction].length > 0) {
+            console.log(
+              `Resolved function call ${entry.relatedFunction} to:`,
+              resolutionCache[entry.relatedFunction]
+            );
+            resolvedObjects.push(...resolutionCache[entry.relatedFunction]);
           }
         }
       }
     }
 
-    return objects;
+    return resolvedObjects;
   }
 
-  private resolveReturnStatement(
-    statement: string,
-    results: Record<string, ReturnAnalysis>
-  ): string | null {
-    const functionCallMatch = statement.match(/^([a-zA-Z_$][\w$]*)\(\)$/);
-    if (!functionCallMatch) return null;
-
-    const functionName = functionCallMatch[1];
+  private resolveReturnStatements(
+    functionName: string,
+    results: Record<string, ReturnAnalysis>,
+    visited: Set<string> = new Set()
+  ): string[] {
     console.log(`Resolving function call: ${functionName}`);
+
+    if (visited.has(functionName)) {
+      console.log(`Circular reference detected for ${functionName}`);
+      return []; // Prevent infinite loops
+    }
+
+    visited.add(functionName);
+
+    const resolvedObjects: string[] = [];
 
     for (const [fileName, analysis] of Object.entries(results)) {
       if (analysis.returnStatements[functionName]) {
-        const jsonLikeReturn = analysis.returnStatements[functionName].find(
-          (stmt) => this.isJsonLike(stmt)
-        );
-
-        if (jsonLikeReturn) {
-          console.log(`Resolved ${functionName} to: ${jsonLikeReturn}`);
-          return jsonLikeReturn;
+        for (const stmt of analysis.returnStatements[functionName]) {
+          if (stmt.type === "unknown") {
+            console.log(`Resolved ${functionName} to JSON: ${stmt.value}`);
+            resolvedObjects.push(stmt.value);
+          } else if (stmt.type === "call" && stmt.relatedFunction) {
+            console.log(
+              `Resolving nested call: ${stmt.relatedFunction} from ${functionName}`
+            );
+            const nestedResults = this.resolveReturnStatements(
+              stmt.relatedFunction,
+              results,
+              visited
+            );
+            resolvedObjects.push(...nestedResults);
+          }
         }
       }
     }
 
-    console.log(`Could not resolve ${functionName}`);
-    return null;
+    if (resolvedObjects.length === 0) {
+      console.log(`Could not resolve ${functionName}`);
+    }
+
+    return resolvedObjects;
   }
 
   private isJsonLike(statement: string): boolean {
     try {
-      // Simple heuristic: try parsing the statement as JSON
-      JSON.parse(statement.replace(/(\w+):/g, '"$1":')); // Convert to JSON-compatible format
+      const jsonCompatible = statement
+        .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?\s*:/g, '"$2":') // Ensure keys are quoted
+        .replace(/'/g, '"');
+      JSON.parse(jsonCompatible);
       return true;
     } catch {
       return false;
