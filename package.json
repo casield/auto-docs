@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "cd packages/core && npm run build && cd ../plugins/openapi && npm run build && cd ../../serverless && npm run build"
   },
   "workspaces": [
     "packages/*/**"

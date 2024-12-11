@@ -1,6 +1,8 @@
 import { DroktPlugin } from "./Plugin";
 import "./types";
 
+export * from "./Plugin";
+
 export class LambdaDocsBuilder<T extends DroktTypes.AvailablePlugins> {
   private config: DroktTypes.DroktConfig<T>;
   private _docs: Map<T, DroktTypes.Plugins[T][]> = new Map();

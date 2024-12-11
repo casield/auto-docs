@@ -3,14 +3,15 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc"
+    "build": "tsc",
+    "dev": "npx serverless dev"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@drokt/serverless": "1.0.0",
     "serverless": "^4.4.15"
   },
   "devDependencies": {

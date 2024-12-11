@@ -1,6 +1,5 @@
-import { DroktPlugin } from "@drokt/core/src/Plugin";
 import "./global-types";
-import { LambdaDocsBuilder } from "@drokt/core/src";
+import { DroktPlugin, LambdaDocsBuilder } from "@drokt/core";
 
 export class OpenApiDoc extends DroktPlugin<"openApi"> {
   constructor() {

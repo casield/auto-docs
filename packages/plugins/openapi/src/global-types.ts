@@ -1,4 +1,4 @@
-import "@drokt/core/src/types";
+import "@drokt/core";
 
 declare global {
   export namespace DroktTypes {

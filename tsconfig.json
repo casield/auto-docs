@@ -2,8 +2,7 @@
   "compilerOptions": {
     "strict": true,
     "lib": ["ESNext", "DOM"],
-    "module": "ES2022",
-    "moduleResolution": "bundler",
+    "module": "CommonJS",
     "esModuleInterop": true
   }
 }

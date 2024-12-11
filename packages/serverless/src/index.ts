@@ -1,4 +1,6 @@
 import Serverless from "serverless";
+import { OpenApiDoc } from "@drokt/openapi-plugin";
+import { LambdaDocsBuilder } from "@drokt/core";
 
 class ServerlessPlugin {
   serverless: Serverless;
@@ -21,12 +23,19 @@ class ServerlessPlugin {
 
   init() {
     // Initialization
+    const b = new LambdaDocsBuilder({
+      name: "My Test Project",
+      description: "This is a test project",
+      plugins: [OpenApiDoc],
+    });
   }
   beforeDeploy() {
     // Before deploy
   }
   afterDeploy() {
     // After deploy
+
+    this.utils.log.info("Deployed successfully");
   }
 }
 
