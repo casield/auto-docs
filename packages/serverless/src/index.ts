@@ -1,8 +1,7 @@
 import Serverless from "serverless";
 import { OpenApiDoc } from "@drokt/openapi-plugin";
 import { LambdaDocsBuilder } from "@drokt/core";
-import { LambdaFunctionAnalyzer } from "./analyze-function";
-import { response } from "./response";
+import { LambdaFunctionAnalyzer } from "./analyze-function-v2";
 
 export * from "./response";
 
@@ -45,6 +44,8 @@ class ServerlessPlugin {
       // TODO: Remove any
       la.analyzeFunction(serverlessFn as any, this.builder!);
     });
+
+    throw new Error("Test error");
   }
   afterDeploy() {
     // After deploy
