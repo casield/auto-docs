@@ -303,20 +303,6 @@ export class LambdaFunctionAnalyzer {
     return this.results[fileName];
   }
 
-  public analyzeFunction(
-    fn: Serverless.FunctionDefinitionHandler | any,
-    builder: LambdaDocsBuilder<"openApi">
-  ): NodeReturn {
-    const handlerFileName = fn.handler.split(".")[0] + ".js";
-    const mainFunctionName = fn.handler.split(".")[1];
-
-    this.analyzeFile(handlerFileName, mainFunctionName);
-
-    // Build a node tree for the main function
-    const nodeTree = this.buildNodeTreeForFunction(mainFunctionName);
-    return nodeTree;
-  }
-
   /**
    * Build a node tree starting from a given function name.
    * This searches the results for the function and then recursively
@@ -399,5 +385,19 @@ export class LambdaFunctionAnalyzer {
   private isFinalRelatedFunction(functionName: string): boolean {
     if (this.globalFinalFunctions.has(functionName)) return true;
     return false;
+  }
+
+  public analyzeFunction(
+    fn: Serverless.FunctionDefinitionHandler | any,
+    builder: LambdaDocsBuilder<"openApi">
+  ): NodeReturn {
+    const handlerFileName = fn.handler.split(".")[0] + ".js";
+    const mainFunctionName = fn.handler.split(".")[1];
+
+    this.analyzeFile(handlerFileName, mainFunctionName);
+
+    // Build a node tree for the main function
+    const nodeTree = this.buildNodeTreeForFunction(mainFunctionName);
+    return nodeTree;
   }
 }

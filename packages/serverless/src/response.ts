@@ -1,11 +1,9 @@
-import { ZodTypeDef } from "zod";
-
-export function response<T>(
+export function response<T, Pl extends DroktTypes.AvailablePlugins>(
   statusCode: number,
   body: T,
   config?: {
+    schema?: string;
     description?: string;
-    schema?: ZodTypeDef;
   }
 ) {
   return {

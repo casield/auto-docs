@@ -3,13 +3,13 @@ import { response } from "@drokt/serverless";
 export const mImport = async () => {
   console.log("otherImport");
 
-  return response(
-    400,
+  const myResponse = response(
+    200,
     {},
     {
-      schema: {
-        message: "nested import",
-      },
+      plugin: "",
     }
   );
+
+  return myResponse;
 };
