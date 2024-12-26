@@ -6,5 +6,26 @@ export const otherImport = async () => {
 
   const he = mImport();
 
+  if (he) {
+    const cl = new MyClass().myMethod();
+    return cl;
+  }
+
   return he;
 };
+
+class MyClass {
+  constructor() {
+    console.log("MyClass");
+  }
+
+  async myMethod() {
+    return response(
+      200,
+      {},
+      {
+        schema: "body",
+      }
+    );
+  }
+}
