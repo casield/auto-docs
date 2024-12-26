@@ -42,7 +42,7 @@ class ServerlessPlugin {
     this.serverless.service.getAllFunctions().forEach((functionName) => {
       const serverlessFn = this.serverless.service.getFunction(functionName);
       // TODO: Remove any
-      la.analyzeFunction(serverlessFn as any, this.builder!);
+      la.analyzeFunction(serverlessFn as any);
     });
 
     throw new Error("Test error");

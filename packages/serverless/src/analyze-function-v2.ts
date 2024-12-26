@@ -684,8 +684,7 @@ export class LambdaFunctionAnalyzer {
    * => parse "fileName.js" and gather the call graph for "handler".
    */
   public analyzeFunction(
-    fn: Serverless.FunctionDefinitionHandler | any,
-    builder: LambdaDocsBuilder<"openApi">
+    fn: Serverless.FunctionDefinitionHandler | any
   ): NodeReturn {
     // e.g. "functions/hello.handler" -> "functions/hello.js" / "handler"
     const handlerFileName = fn.handler.split(".")[0] + ".js";

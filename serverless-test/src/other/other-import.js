@@ -8,7 +8,7 @@ export const otherImport = async () => {
 
   if (he) {
     const cl = new MyClass().myMethod();
-    return cl;
+    return await cl;
   }
 
   return he;
@@ -20,12 +20,14 @@ class MyClass {
   }
 
   async myMethod() {
-    return response(
+    const my = response(
       200,
       {},
       {
         schema: "body",
       }
     );
+
+    return my;
   }
 }
