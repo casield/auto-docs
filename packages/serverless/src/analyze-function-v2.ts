@@ -8,25 +8,36 @@ import Serverless from "serverless";
 import { LambdaDocsBuilder } from "@drokt/core";
 import pathnode from "path";
 
+/**
+ * Describes an individual return statement in a function or method.
+ */
 type ReturnStatementEntry = {
   type: "call" | "unknown";
   value: string;
   relatedFunction?: string;
-  astNode?: t.Node;
+  astNode?: t.Node; // Store the original AST node for potential modifications
 };
 
+/**
+ * Stores information about the return statements in a file.
+ * - returnStatements: top-level named functions, arrow functions, etc.
+ * - classMethods: methods in classes, keyed as "ClassName.methodName"
+ */
 type ReturnAnalysis = {
   returnStatements: Record<string, ReturnStatementEntry[]>;
   classMethods?: Record<string, ReturnStatementEntry[]>;
 };
 
+/**
+ * A tree node representing a function (or class method) call chain.
+ */
 type NodeReturn = {
   type: "call" | "unknown";
   value: string;
   relatedFunction?: string;
   final?: boolean;
   children?: NodeReturn[];
-  astNode?: t.Node;
+  astNode?: t.Node; // Include the AST node in the final structure
 };
 
 export class LambdaFunctionAnalyzer {
@@ -34,7 +45,16 @@ export class LambdaFunctionAnalyzer {
   private zipEntries: AdmZip.IZipEntry[];
   private analyzedFiles: Set<string>;
   private results: Record<string, ReturnAnalysis>;
+
+  /**
+   * Easily modify this value to change the "final" framework source:
+   * If a function is imported from here, we treat calls to it as "final" calls.
+   */
   private finalFrameworkSource = "@drokt/serverless";
+
+  /**
+   * Global sets to track final functions and namespaces discovered.
+   */
   private globalFinalFunctions: Set<string> = new Set();
   private globalFinalNamespaces: Set<string> = new Set();
 
@@ -45,15 +65,26 @@ export class LambdaFunctionAnalyzer {
     this.results = {};
   }
 
+  /**
+   * Retrieves file content from the ZIP artifact, returning it as a UTF-8 string.
+   */
   private getFileContent(fileName: string): string | null {
     const entry = this.zipEntries.find((entry) => entry.entryName === fileName);
     return entry ? entry.getData().toString("utf8") : null;
   }
 
+  /**
+   * Analyzes a single file, collecting information about:
+   * - Return statements (functions, arrow functions, etc.)
+   * - Class methods & their returns
+   * - "Final" calls (imported from special framework)
+   * - Re-exports/imports, so we can recurse across files
+   */
   private analyzeFile(
     fileName: string,
     targetFunction: string
   ): ReturnAnalysis {
+    // Avoid re-analyzing the same file
     if (this.analyzedFiles.has(fileName)) {
       return this.results[fileName];
     }
@@ -64,20 +95,28 @@ export class LambdaFunctionAnalyzer {
       throw new Error(`File ${fileName} not found in the artifact.`);
     }
 
+    // Parse the file into an AST with Babel
     const ast = parser.parse(fileContent, {
       sourceType: "module",
       plugins: ["typescript", "jsx"],
     });
 
+    // Structures to fill as we traverse
     const returnStatements: Record<string, ReturnStatementEntry[]> = {};
     const classMethods: Record<string, ReturnStatementEntry[]> = {};
     const importMap: Record<string, string> = {};
     const variableAssignments: Record<string, string> = {};
 
+    // Local sets to track "final" calls discovered in this file
     const finalFunctions = new Set<string>();
     const finalNamespaces = new Set<string>();
 
-    // === Fix logic to detect "new MyClass().myMethod()" in variable assignments ===
+    /**
+     * 1. Collect variable assignments, such as:
+     *    const x = someFunction();
+     *    const x = await someFunction();
+     *    const x = new MyClass().myMethod(); <-- (important for our scenario)
+     */
     const collectVariableAssignments = (path: NodePath) => {
       path.traverse({
         VariableDeclarator(variablePath) {
@@ -89,16 +128,19 @@ export class LambdaFunctionAnalyzer {
           const init = variablePath.node.init;
           if (!init) return;
 
+          // If it's an await call like: const x = await someFunction();
           if (
             t.isAwaitExpression(init) &&
             t.isCallExpression(init.argument) &&
             t.isIdentifier(init.argument.callee)
           ) {
             variableAssignments[variableName] = init.argument.callee.name;
-          } else if (t.isCallExpression(init) && t.isIdentifier(init.callee)) {
+          }
+          // If it's a direct call like: const x = someFunction();
+          else if (t.isCallExpression(init) && t.isIdentifier(init.callee)) {
             variableAssignments[variableName] = init.callee.name;
           }
-          // NEW: handle "new MyClass().myMethod()"
+          // NEW: if it's "new MyClass().myMethod()"
           else if (
             t.isCallExpression(init) &&
             t.isMemberExpression(init.callee) &&
@@ -121,8 +163,39 @@ export class LambdaFunctionAnalyzer {
       });
     };
 
+    /**
+     * 2. Determine if a `CallExpression` is "final" (i.e. from our special library).
+     *    - If the callee is an identifier in finalFunctions or globalFinalFunctions
+     *    - Or if the callee is a member expression referencing a final namespace.
+     */
+    const isFinalCall = (node: t.CallExpression) => {
+      // If callee is an identifier
+      if (t.isIdentifier(node.callee)) {
+        return (
+          finalFunctions.has(node.callee.name) ||
+          this.globalFinalFunctions.has(node.callee.name)
+        );
+      }
+      // If callee is something like myNamespace.foo() where myNamespace is final
+      if (t.isMemberExpression(node.callee)) {
+        const object = node.callee.object;
+        if (t.isIdentifier(object)) {
+          return (
+            finalNamespaces.has(object.name) ||
+            this.globalFinalNamespaces.has(object.name)
+          );
+        }
+      }
+      return false;
+    };
+
+    /**
+     * 3. Collect return statements from a specific path (function, arrow function, etc.).
+     *    - For example, if we have `functionName` = "myFunc", gather `return ...;` from that function.
+     */
     const collectReturnStatements = (path: NodePath, functionName: string) => {
-      collectVariableAssignments(path); // IMPORTANT: must run
+      // Gather variable assignments within this function's scope
+      collectVariableAssignments(path);
 
       path.traverse({
         ReturnStatement(returnPath) {
@@ -135,27 +208,83 @@ export class LambdaFunctionAnalyzer {
             astNode: returnPath.node.argument,
           };
 
-          // If it's just "return varName;"
+          // Case A: return a variable like "return x;"
           if (t.isIdentifier(returnPath.node.argument)) {
             const variableName = returnPath.node.argument.name;
+            // If x = someFunction or x = new MyClass().myMethod, resolve it
             if (variableAssignments[variableName]) {
-              // => turn it into a call to the function we tracked
               entry.type = "call";
               entry.relatedFunction = variableAssignments[variableName];
               entry.value = variableAssignments[variableName];
             }
           }
-          // If it's "return new MyClass().myMethod()" or any call
+
+          // Case B: return a call expression, e.g. "return someFn();" or "return new MyClass().myMethod();"
           else if (t.isCallExpression(returnPath.node.argument)) {
             entry.type = "call";
-            // same logic as before
-            // ...
-          }
-          // If it's an await
-          else if (t.isAwaitExpression(returnPath.node.argument)) {
-            // ...
+            const callee = returnPath.node.argument.callee;
+
+            // e.g. return myFunction();
+            if (t.isIdentifier(callee)) {
+              entry.relatedFunction = callee.name;
+            }
+            // e.g. return obj.myMethod();
+            else if (t.isMemberExpression(callee)) {
+              if (t.isIdentifier(callee.property)) {
+                entry.relatedFunction = callee.property.name;
+              }
+              // If it's "new MyClass().myMethod()"
+              if (t.isNewExpression(callee.object)) {
+                const newExpr = callee.object;
+                if (t.isIdentifier(newExpr.callee)) {
+                  const className = newExpr.callee.name;
+                  const methodName = t.isIdentifier(callee.property)
+                    ? callee.property.name
+                    : null;
+                  if (methodName) {
+                    entry.relatedFunction = `${className}.${methodName}`;
+                  }
+                }
+              }
+            }
           }
 
+          // Case C: return await call
+          else if (t.isAwaitExpression(returnPath.node.argument)) {
+            const awaitedExpression = returnPath.node.argument.argument;
+            returnCode = generator(awaitedExpression).code;
+
+            if (t.isCallExpression(awaitedExpression)) {
+              entry.type = "call";
+              const callee = awaitedExpression.callee;
+
+              // e.g. await myFunction()
+              if (t.isIdentifier(callee)) {
+                entry.relatedFunction = callee.name;
+              }
+              // e.g. await new MyClass().myMethod()
+              else if (t.isMemberExpression(callee)) {
+                if (t.isIdentifier(callee.property)) {
+                  entry.relatedFunction = callee.property.name;
+                }
+                if (t.isNewExpression(callee.object)) {
+                  const newExpr = callee.object;
+                  if (t.isIdentifier(newExpr.callee)) {
+                    const className = newExpr.callee.name;
+                    const methodName = t.isIdentifier(callee.property)
+                      ? callee.property.name
+                      : null;
+                    if (methodName) {
+                      entry.relatedFunction = `${className}.${methodName}`;
+                    }
+                  }
+                }
+              }
+              entry.value = returnCode;
+            }
+          }
+
+          // Store it for this functionName
           if (!returnStatements[functionName]) {
             returnStatements[functionName] = [];
           }
@@ -164,53 +293,307 @@ export class LambdaFunctionAnalyzer {
       });
     };
 
-    // ... (rest of your traverse logic, class declarations, etc.) ...
-
-    // main traverse
+    // ---- TRAVERSE THE AST ----------------------------------------------
     traverse(ast, {
-      // IMPORTS, FUNCTION DECLARATIONS, etc.
-      // ...
+      /**
+       * IMPORTS via require("...") -> Resolve path for further analysis
+       */
+      CallExpression: (path) => {
+        if (
+          t.isIdentifier(path.node.callee) &&
+          path.node.callee.name === "require" &&
+          t.isStringLiteral(path.node.arguments[0])
+        ) {
+          const importPath = path.node.arguments[0].value;
+          const resolvedPath =
+            pathnode
+              .join(pathnode.dirname(fileName), importPath)
+              .replace(/\\/g, "/") + ".js";
+          importMap[importPath] = resolvedPath;
+        }
+      },
+
+      /**
+       * IMPORTS via import ... from "..." -> Track if from final source
+       */
+      ImportDeclaration: (path) => {
+        const source = path.node.source.value;
+        const resolvedPath =
+          pathnode
+            .join(pathnode.dirname(fileName), source)
+            .replace(/\\/g, "/") + ".js";
+
+        const isFinalSource = source === this.finalFrameworkSource;
+        for (const specifier of path.node.specifiers) {
+          if (t.isImportSpecifier(specifier)) {
+            importMap[specifier.local.name] = resolvedPath;
+            if (isFinalSource) {
+              finalFunctions.add(specifier.local.name);
+              this.globalFinalFunctions.add(specifier.local.name);
+            }
+          } else if (t.isImportDefaultSpecifier(specifier)) {
+            importMap[specifier.local.name] = resolvedPath;
+            if (isFinalSource) {
+              finalFunctions.add(specifier.local.name);
+              this.globalFinalFunctions.add(specifier.local.name);
+            }
+          } else if (t.isImportNamespaceSpecifier(specifier)) {
+            importMap[specifier.local.name] = resolvedPath;
+            if (isFinalSource) {
+              finalNamespaces.add(specifier.local.name);
+              this.globalFinalNamespaces.add(specifier.local.name);
+            }
+          }
+        }
+      },
+
+      /**
+       * FUNCTION DECLARATIONS, e.g. function targetFunction() { ... }
+       */
       FunctionDeclaration: (path) => {
         if (path.node.id?.name === targetFunction) {
           collectReturnStatements(path, path.node.id.name);
         }
       },
-      // handle arrow functions, assignments, etc.
-      // ...
 
+      /**
+       * ASSIGNMENT to module.exports or object property -> Might define a function
+       */
+      AssignmentExpression: (path) => {
+        const left = path.node.left;
+        const right = path.node.right;
+
+        const functionName =
+          t.isMemberExpression(left) && t.isIdentifier(left.property)
+            ? left.property.name
+            : "module.exports";
+
+        if (
+          t.isMemberExpression(left) &&
+          (t.isFunctionExpression(right) || t.isArrowFunctionExpression(right))
+        ) {
+          collectReturnStatements(path.get("right"), functionName);
+        }
+      },
+
+      /**
+       * VARIABLE DECLARATIONS that define arrow functions
+       */
+      VariableDeclaration: (path) => {
+        path.node.declarations.forEach((declaration) => {
+          if (
+            t.isVariableDeclarator(declaration) &&
+            t.isIdentifier(declaration.id) &&
+            t.isArrowFunctionExpression(declaration.init)
+          ) {
+            const declaratorPath = path
+              .get("declarations")
+              .find(
+                (d) =>
+                  t.isVariableDeclarator(d.node) &&
+                  t.isIdentifier(d.node.id) &&
+                  t.isIdentifier(d.node.id) &&
+                  t.isIdentifier(declaration.id) &&
+                  d.node.id.name === declaration.id.name
+              );
+            if (declaratorPath) {
+              const initPath = declaratorPath.get("init");
+              if (initPath && initPath.node) {
+                collectReturnStatements(
+                  initPath as NodePath<t.Node>,
+                  declaration.id.name
+                );
+              }
+            }
+          }
+        });
+      },
+
+      /**
+       * CLASS DECLARATIONS -> Collect return statements from each method
+       * e.g. class MyClass { myMethod() { return something; } }
+       */
       ClassDeclaration: (classPath) => {
-        // ...
-        // For each method, do a mini-traverse to gather returns
-        // ...
+        if (!t.isIdentifier(classPath.node.id)) return;
+        const className = classPath.node.id.name;
+
+        // Look at each method in the class body
+        for (const method of classPath.node.body.body) {
+          if (!t.isClassMethod(method)) continue;
+          // We only consider 'method' or 'constructor' (optionally)
+          if (method.kind !== "method" && method.kind !== "constructor")
+            continue;
+
+          const methodKey = method.key;
+          if (!t.isIdentifier(methodKey)) continue;
+
+          const methodName = methodKey.name;
+          const uniqueFunctionName = `${className}.${methodName}`;
+
+          // Initialize our structure
+          if (!classMethods[uniqueFunctionName]) {
+            classMethods[uniqueFunctionName] = [];
+          }
+
+          // We'll do a mini-traverse of the method body to collect returns
+          const methodBodyPath = classPath
+            .get("body")
+            .get("body")
+            .find((m) => m.node === method) as NodePath<t.ClassMethod>;
+
+          // Before collecting returns, also gather local variable assignments here
+          // (in case the method references `const x = someCall(); return x;`)
+          if (methodBodyPath) {
+            methodBodyPath.traverse({
+              VariableDeclarator(varPath) {
+                const varName = t.isIdentifier(varPath.node.id)
+                  ? varPath.node.id.name
+                  : null;
+                if (!varName) return;
+
+                const init = varPath.node.init;
+                if (!init) return;
+
+                // same logic as in collectVariableAssignments
+                if (
+                  t.isAwaitExpression(init) &&
+                  t.isCallExpression(init.argument) &&
+                  t.isIdentifier(init.argument.callee)
+                ) {
+                  variableAssignments[varName] = init.argument.callee.name;
+                } else if (
+                  t.isCallExpression(init) &&
+                  t.isIdentifier(init.callee)
+                ) {
+                  variableAssignments[varName] = init.callee.name;
+                } else if (
+                  t.isCallExpression(init) &&
+                  t.isMemberExpression(init.callee) &&
+                  t.isNewExpression(init.callee.object)
+                ) {
+                  const newExpr = init.callee.object;
+                  if (t.isIdentifier(newExpr.callee)) {
+                    const cName = newExpr.callee.name;
+                    const mName = t.isIdentifier(init.callee.property)
+                      ? init.callee.property.name
+                      : null;
+                    if (mName) {
+                      variableAssignments[varName] = `${cName}.${mName}`;
+                    }
+                  }
+                }
+              },
+              ReturnStatement(retPath) {
+                if (!retPath.node.argument) return;
+                let returnCode = generator(retPath.node.argument).code;
+
+                const entry: ReturnStatementEntry = {
+                  type: "unknown",
+                  value: returnCode,
+                  astNode: retPath.node.argument,
+                };
+
+                // If it's "return varName"
+                if (t.isIdentifier(retPath.node.argument)) {
+                  const varName = retPath.node.argument.name;
+                  if (variableAssignments[varName]) {
+                    entry.type = "call";
+                    entry.relatedFunction = variableAssignments[varName];
+                    entry.value = variableAssignments[varName];
+                  }
+                }
+                // If it's "return someCall()"
+                else if (t.isCallExpression(retPath.node.argument)) {
+                  entry.type = "call";
+                  const callee = retPath.node.argument.callee;
+
+                  if (t.isIdentifier(callee)) {
+                    entry.relatedFunction = callee.name;
+                  } else if (t.isMemberExpression(callee)) {
+                    if (t.isIdentifier(callee.property)) {
+                      entry.relatedFunction = callee.property.name;
+                    }
+                    // new MyClass().myMethod
+                    if (t.isNewExpression(callee.object)) {
+                      const newExpr = callee.object;
+                      if (t.isIdentifier(newExpr.callee)) {
+                        const cName = newExpr.callee.name;
+                        const mName = t.isIdentifier(callee.property)
+                          ? callee.property.name
+                          : null;
+                        if (mName) {
+                          entry.relatedFunction = `${cName}.${mName}`;
+                        }
+                      }
+                    }
+                  }
+                }
+                // If it's "return await something"
+                else if (t.isAwaitExpression(retPath.node.argument)) {
+                  const awaited = retPath.node.argument.argument;
+                  returnCode = generator(awaited).code;
+
+                  if (t.isCallExpression(awaited)) {
+                    entry.type = "call";
+                    if (t.isIdentifier(awaited.callee)) {
+                      entry.relatedFunction = awaited.callee.name;
+                    } else if (t.isMemberExpression(awaited.callee)) {
+                      if (t.isIdentifier(awaited.callee.property)) {
+                        entry.relatedFunction = awaited.callee.property.name;
+                      }
+                      if (t.isNewExpression(awaited.callee.object)) {
+                        const newExpr = awaited.callee.object;
+                        if (t.isIdentifier(newExpr.callee)) {
+                          const cName = newExpr.callee.name;
+                          const mName = t.isIdentifier(awaited.callee.property)
+                            ? awaited.callee.property.name
+                            : null;
+                          if (mName) {
+                            entry.relatedFunction = `${cName}.${mName}`;
+                          }
+                        }
+                      }
+                    }
+                    entry.value = returnCode;
+                  }
+                }
+
+                // Add to classMethods
+                classMethods[uniqueFunctionName].push(entry);
+              },
+            });
+          }
+        }
       },
     });
 
-    // store analysis
+    // Store the analysis for this file
     this.results[fileName] = { returnStatements, classMethods };
 
-    // Recurse into imports
+    // Check for imports and analyze those files too
     for (const [importedName, importedPath] of Object.entries(importMap)) {
       if (this.zipEntries.some((entry) => entry.entryName === importedPath)) {
+        // Re-analyze that imported file
         this.analyzeFile(importedPath, importedName);
       }
     }
 
     return this.results[fileName];
   }
+
   /**
-   * Build a node tree starting from a given function name or class-method name.
-   * This looks up the return statements, then recursively processes each call.
+   * Build a node tree starting from a given function (or "ClassName.methodName").
    */
   private buildNodeTreeForFunction(
     functionName: string,
     visited = new Set<string>()
   ): NodeReturn {
-    // 1. Gather all entries from either returnStatements or classMethods
+    // 1. Gather all entries from either top-level function returns or class methods
     const entries =
       this.findFunctionReturns(functionName) ??
       this.findClassMethodReturns(functionName);
 
-    // If no entries found, return an unknown node
+    // If none found, return a placeholder
     if (!entries) {
       return {
         type: "unknown",
@@ -218,7 +601,7 @@ export class LambdaFunctionAnalyzer {
       };
     }
 
-    // Create a synthetic node representing the function
+    // Create a synthetic root node
     const rootNode: NodeReturn = {
       type: "call",
       value: functionName,
@@ -244,16 +627,14 @@ export class LambdaFunctionAnalyzer {
       };
 
       if (entry.type === "call" && entry.relatedFunction) {
-        // Check if this call is final
+        // Check if this is a final call
         if (this.isFinalRelatedFunction(entry.relatedFunction)) {
           node.final = true;
         } else {
-          // Not final, try to resolve further
-          const childNode = this.buildNodeTreeForFunction(
-            entry.relatedFunction,
-            visited
-          );
-          node.children = [childNode];
+          // Not final, keep digging
+          node.children = [
+            this.buildNodeTreeForFunction(entry.relatedFunction, visited),
+          ];
         }
       }
 
@@ -278,8 +659,7 @@ export class LambdaFunctionAnalyzer {
   }
 
   /**
-   * Finds the return statements for a given class-method name across all analyzed files.
-   * e.g. "MyClass.myMethod"
+   * Finds the return statements for a given class-method name (e.g. "MyClass.myMethod").
    */
   private findClassMethodReturns(
     functionName: string
@@ -293,29 +673,28 @@ export class LambdaFunctionAnalyzer {
   }
 
   /**
-   * Determine if a relatedFunction name corresponds to a final call.
+   * Determine if a relatedFunction corresponds to a final call.
    */
   private isFinalRelatedFunction(functionName: string): boolean {
-    if (this.globalFinalFunctions.has(functionName)) return true;
-    return false;
+    return this.globalFinalFunctions.has(functionName);
   }
 
   /**
-   * The public entry point to analyze a specific Serverless function definition.
-   * For example, if the handler is "fileName.handler", it will parse `fileName.js`
-   * and build a call graph for `handler`.
+   * Public API: analyze a Serverless function. E.g. handler = "fileName.handler"
+   * => parse "fileName.js" and gather the call graph for "handler".
    */
   public analyzeFunction(
     fn: Serverless.FunctionDefinitionHandler | any,
     builder: LambdaDocsBuilder<"openApi">
   ): NodeReturn {
-    // e.g. "src/myLambda.handler" -> "src/myLambda.js" and "handler"
+    // e.g. "functions/hello.handler" -> "functions/hello.js" / "handler"
     const handlerFileName = fn.handler.split(".")[0] + ".js";
     const mainFunctionName = fn.handler.split(".")[1];
 
+    // Start analyzing
     this.analyzeFile(handlerFileName, mainFunctionName);
 
-    // Build a node tree for the main function
+    // Build a node-based call graph
     const nodeTree = this.buildNodeTreeForFunction(mainFunctionName);
     return nodeTree;
   }
