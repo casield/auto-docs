@@ -1,4 +1,4 @@
-export function response<T, Pl extends DroktTypes.AvailablePlugins>(
+export function response<T>(
   statusCode: number,
   body: T,
   config?: {

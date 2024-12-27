@@ -2,8 +2,11 @@ import Serverless from "serverless";
 import { OpenApiDoc } from "@drokt/openapi-plugin";
 import { LambdaDocsBuilder } from "@drokt/core";
 import { LambdaFunctionAnalyzer } from "./analyze-function-v2";
+import { recreateDocs } from "./recreate-docs";
 
 export * from "./response";
+
+export type * from "./analyze-function-v2";
 
 class ServerlessPlugin {
   serverless: Serverless;
@@ -36,14 +39,21 @@ class ServerlessPlugin {
   beforeDeploy() {
     // Before deploy
 
+    if (!this.builder) {
+      throw new Error("Builder not initialized");
+    }
+
     const artifactName = this.serverless.service.package.artifact;
     const la = new LambdaFunctionAnalyzer(artifactName);
 
-    this.serverless.service.getAllFunctions().forEach((functionName) => {
-      const serverlessFn = this.serverless.service.getFunction(functionName);
-      // TODO: Remove any
-      la.analyzeFunction(serverlessFn as any);
-    });
+    const results = this.serverless.service
+      .getAllFunctions()
+      .map((functionName) => {
+        const serverlessFn = this.serverless.service.getFunction(functionName);
+        return la.analyzeFunction(serverlessFn);
+      });
+
+    recreateDocs(results, this.builder);
 
     throw new Error("Test error");
   }

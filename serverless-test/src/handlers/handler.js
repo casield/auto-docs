@@ -1,5 +1,10 @@
 const { otherImport } = require("../other/other-import");
 
+/**
+ * My Description
+ * @param {*} event
+ * @returns
+ */
 exports.hello = async (event) => {
   if (event.queryStringParameters && event.queryStringParameters.other) {
     return await otherImport();

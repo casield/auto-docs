@@ -5,17 +5,20 @@ import traverse, { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 import AdmZip from "adm-zip";
 import Serverless from "serverless";
-import { LambdaDocsBuilder } from "@drokt/core";
 import pathnode from "path";
 
 /**
  * Describes an individual return statement in a function or method.
  */
-type ReturnStatementEntry = {
+export type ReturnStatementEntry = {
   type: "call" | "unknown";
   value: string;
   relatedFunction?: string;
-  astNode?: t.Node; // Store the original AST node for potential modifications
+  /**
+   * We store the original NodePath for the ReturnStatement so that
+   * we can revisit or modify it later if needed.
+   */
+  nodePath?: NodePath;
 };
 
 /**
@@ -23,7 +26,7 @@ type ReturnStatementEntry = {
  * - returnStatements: top-level named functions, arrow functions, etc.
  * - classMethods: methods in classes, keyed as "ClassName.methodName"
  */
-type ReturnAnalysis = {
+export type ReturnAnalysis = {
   returnStatements: Record<string, ReturnStatementEntry[]>;
   classMethods?: Record<string, ReturnStatementEntry[]>;
 };
@@ -31,13 +34,21 @@ type ReturnAnalysis = {
 /**
  * A tree node representing a function (or class method) call chain.
  */
-type NodeReturn = {
+export type NodeReturn = {
   type: "call" | "unknown";
   value: string;
   relatedFunction?: string;
   final?: boolean;
   children?: NodeReturn[];
-  astNode?: t.Node; // Include the AST node in the final structure
+  /**
+   * A reference to the NodePath we discovered so you can revisit it if needed.
+   */
+  nodePath?: NodePath;
+
+  /**
+   * NEW: Holds the leading comment (if any) for the *main* function.
+   */
+  description?: string;
 };
 
 export class LambdaFunctionAnalyzer {
@@ -57,6 +68,12 @@ export class LambdaFunctionAnalyzer {
    */
   private globalFinalFunctions: Set<string> = new Set();
   private globalFinalNamespaces: Set<string> = new Set();
+
+  /**
+   * NEW: Store descriptions for top-level functions (including exported arrow functions).
+   *      Key is the function name (e.g. "handler"), value is the leading comment text.
+   */
+  private functionDescriptions: Record<string, string> = {};
 
   constructor(private artifactName: string) {
     this.zip = new AdmZip(artifactName);
@@ -115,7 +132,7 @@ export class LambdaFunctionAnalyzer {
      * 1. Collect variable assignments, such as:
      *    const x = someFunction();
      *    const x = await someFunction();
-     *    const x = new MyClass().myMethod(); <-- (important for our scenario)
+     *    const x = new MyClass().myMethod();
      */
     const collectVariableAssignments = (path: NodePath) => {
       path.traverse({
@@ -140,7 +157,7 @@ export class LambdaFunctionAnalyzer {
           else if (t.isCallExpression(init) && t.isIdentifier(init.callee)) {
             variableAssignments[variableName] = init.callee.name;
           }
-          // NEW: if it's "new MyClass().myMethod()"
+          // If it's "new MyClass().myMethod()"
           else if (
             t.isCallExpression(init) &&
             t.isMemberExpression(init.callee) &&
@@ -165,8 +182,6 @@ export class LambdaFunctionAnalyzer {
 
     /**
      * 2. Determine if a `CallExpression` is "final" (i.e. from our special library).
-     *    - If the callee is an identifier in finalFunctions or globalFinalFunctions
-     *    - Or if the callee is a member expression referencing a final namespace.
      */
     const isFinalCall = (node: t.CallExpression) => {
       // If callee is an identifier
@@ -176,7 +191,7 @@ export class LambdaFunctionAnalyzer {
           this.globalFinalFunctions.has(node.callee.name)
         );
       }
-      // If callee is something like myNamespace.foo() where myNamespace is final
+      // If callee is something like myNamespace.foo()
       if (t.isMemberExpression(node.callee)) {
         const object = node.callee.object;
         if (t.isIdentifier(object)) {
@@ -191,7 +206,6 @@ export class LambdaFunctionAnalyzer {
 
     /**
      * 3. Collect return statements from a specific path (function, arrow function, etc.).
-     *    - For example, if we have `functionName` = "myFunc", gather `return ...;` from that function.
      */
     const collectReturnStatements = (path: NodePath, functionName: string) => {
       // Gather variable assignments within this function's scope
@@ -205,21 +219,19 @@ export class LambdaFunctionAnalyzer {
           const entry: ReturnStatementEntry = {
             type: "unknown",
             value: returnCode,
-            astNode: returnPath.node.argument,
+            nodePath: returnPath, // Storing the entire ReturnStatement path
           };
 
           // Case A: return a variable like "return x;"
           if (t.isIdentifier(returnPath.node.argument)) {
             const variableName = returnPath.node.argument.name;
-            // If x = someFunction or x = new MyClass().myMethod, resolve it
             if (variableAssignments[variableName]) {
               entry.type = "call";
               entry.relatedFunction = variableAssignments[variableName];
               entry.value = variableAssignments[variableName];
             }
           }
-
-          // Case B: return a call expression, e.g. "return someFn();" or "return new MyClass().myMethod();"
+          // Case B: return a call expression
           else if (t.isCallExpression(returnPath.node.argument)) {
             entry.type = "call";
             const callee = returnPath.node.argument.callee;
@@ -233,7 +245,7 @@ export class LambdaFunctionAnalyzer {
               if (t.isIdentifier(callee.property)) {
                 entry.relatedFunction = callee.property.name;
               }
-              // If it's "new MyClass().myMethod()"
+              // new MyClass().myMethod
               if (t.isNewExpression(callee.object)) {
                 const newExpr = callee.object;
                 if (t.isIdentifier(newExpr.callee)) {
@@ -248,7 +260,6 @@ export class LambdaFunctionAnalyzer {
               }
             }
           }
-
           // Case C: return await call
           else if (t.isAwaitExpression(returnPath.node.argument)) {
             const awaitedExpression = returnPath.node.argument.argument;
@@ -296,7 +307,7 @@ export class LambdaFunctionAnalyzer {
     // ---- TRAVERSE THE AST ----------------------------------------------
     traverse(ast, {
       /**
-       * IMPORTS via require("...") -> Resolve path for further analysis
+       * REQUIRE statements: require("...")
        */
       CallExpression: (path) => {
         if (
@@ -314,7 +325,7 @@ export class LambdaFunctionAnalyzer {
       },
 
       /**
-       * IMPORTS via import ... from "..." -> Track if from final source
+       * IMPORT statements: import ... from "..."
        */
       ImportDeclaration: (path) => {
         const source = path.node.source.value;
@@ -353,6 +364,71 @@ export class LambdaFunctionAnalyzer {
       FunctionDeclaration: (path) => {
         if (path.node.id?.name === targetFunction) {
           collectReturnStatements(path, path.node.id.name);
+
+          // Capture leading comment(s) if any
+          if (path.node.leadingComments) {
+            const commentText = path.node.leadingComments
+              .map((c) => c.value.trim())
+              .join("\n");
+            this.functionDescriptions[path.node.id.name] = commentText;
+          }
+        }
+      },
+
+      /**
+       * EXPORT named declarations, e.g.: export const handler = ...
+       * We'll specifically look for ArrowFunctionExpression.
+       */
+      ExportNamedDeclaration: (exportPath) => {
+        const decl = exportPath.node.declaration;
+        if (t.isVariableDeclaration(decl)) {
+          for (const declarator of decl.declarations) {
+            if (
+              t.isIdentifier(declarator.id) &&
+              t.isArrowFunctionExpression(declarator.init)
+            ) {
+              // If the function name matches targetFunction,
+              // we collect its return statements
+              if (declarator.id.name === targetFunction) {
+                const varPath = exportPath
+                  .get("declaration")
+                  .get("declarations")
+                  .find((d) => d.node === declarator);
+
+                if (varPath && varPath.isVariableDeclarator()) {
+                  const initPath = varPath.get("init");
+                  if (initPath && initPath.node) {
+                    collectReturnStatements(
+                      initPath as NodePath<t.Node>,
+                      declarator.id.name
+                    );
+
+                    // Capture leading comments on the ArrowFunctionExpression
+                    // Arrow function might have leading comments on itself,
+                    // or on the `export ...` node. We can check both.
+                    let commentText = "";
+                    if (initPath.node.leadingComments) {
+                      commentText = initPath.node.leadingComments
+                        .map((c) => c.value.trim())
+                        .join("\n");
+                    }
+                    // If no leadingComments directly on the arrow function,
+                    // check if there's something on the ExportNamedDeclaration node
+                    if (!commentText && exportPath.node.leadingComments) {
+                      commentText = exportPath.node.leadingComments
+                        .map((c) => c.value.trim())
+                        .join("\n");
+                    }
+
+                    if (commentText) {
+                      this.functionDescriptions[declarator.id.name] =
+                        commentText;
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       },
 
@@ -373,6 +449,19 @@ export class LambdaFunctionAnalyzer {
           (t.isFunctionExpression(right) || t.isArrowFunctionExpression(right))
         ) {
           collectReturnStatements(path.get("right"), functionName);
+        }
+
+        // Now check the parent for leadingComments
+        if (
+          path.parentPath.isExpressionStatement() &&
+          path.parentPath.node.leadingComments
+        ) {
+          const commentText = path.parentPath.node.leadingComments
+            .map((c) => c.value.trim())
+            .join("\n");
+          if (commentText) {
+            this.functionDescriptions[functionName] = commentText;
+          }
         }
       },
 
@@ -403,6 +492,27 @@ export class LambdaFunctionAnalyzer {
                   initPath as NodePath<t.Node>,
                   declaration.id.name
                 );
+
+                // If the name matches targetFunction, let's see if there's a leading comment
+                if (declaration.id.name === targetFunction) {
+                  let commentText = "";
+                  // Check leading comments on the arrow function
+                  if (initPath.node.leadingComments) {
+                    commentText = initPath.node.leadingComments
+                      .map((c) => c.value.trim())
+                      .join("\n");
+                  }
+                  // If none, check the variable declaration itself
+                  if (!commentText && path.node.leadingComments) {
+                    commentText = path.node.leadingComments
+                      .map((c) => c.value.trim())
+                      .join("\n");
+                  }
+                  if (commentText) {
+                    this.functionDescriptions[declaration.id.name] =
+                      commentText;
+                  }
+                }
               }
             }
           }
@@ -420,7 +530,6 @@ export class LambdaFunctionAnalyzer {
         // Look at each method in the class body
         for (const method of classPath.node.body.body) {
           if (!t.isClassMethod(method)) continue;
-          // We only consider 'method' or 'constructor' (optionally)
           if (method.kind !== "method" && method.kind !== "constructor")
             continue;
 
@@ -435,15 +544,14 @@ export class LambdaFunctionAnalyzer {
             classMethods[uniqueFunctionName] = [];
           }
 
-          // We'll do a mini-traverse of the method body to collect returns
+          // We'll do a mini-traverse of the method's body to collect returns
           const methodBodyPath = classPath
             .get("body")
             .get("body")
             .find((m) => m.node === method) as NodePath<t.ClassMethod>;
 
-          // Before collecting returns, also gather local variable assignments here
-          // (in case the method references `const x = someCall(); return x;`)
           if (methodBodyPath) {
+            // Also collect variable assignments inside the method
             methodBodyPath.traverse({
               VariableDeclarator(varPath) {
                 const varName = t.isIdentifier(varPath.node.id)
@@ -454,7 +562,7 @@ export class LambdaFunctionAnalyzer {
                 const init = varPath.node.init;
                 if (!init) return;
 
-                // same logic as in collectVariableAssignments
+                // Same logic as collectVariableAssignments
                 if (
                   t.isAwaitExpression(init) &&
                   t.isCallExpression(init.argument) &&
@@ -483,6 +591,7 @@ export class LambdaFunctionAnalyzer {
                   }
                 }
               },
+
               ReturnStatement(retPath) {
                 if (!retPath.node.argument) return;
                 let returnCode = generator(retPath.node.argument).code;
@@ -490,7 +599,7 @@ export class LambdaFunctionAnalyzer {
                 const entry: ReturnStatementEntry = {
                   type: "unknown",
                   value: returnCode,
-                  astNode: retPath.node.argument,
+                  nodePath: retPath, // entire ReturnStatement path
                 };
 
                 // If it's "return varName"
@@ -606,10 +715,12 @@ export class LambdaFunctionAnalyzer {
       type: "call",
       value: functionName,
       children: [],
+      // Look up any captured leading comment
+      description: this.functionDescriptions[functionName] || undefined,
     };
 
+    // Check for circular references
     if (visited.has(functionName)) {
-      // Circular reference detected
       rootNode.type = "unknown";
       rootNode.value = `Circular reference in ${functionName}`;
       return rootNode;
@@ -623,7 +734,7 @@ export class LambdaFunctionAnalyzer {
         type: entry.type,
         value: entry.value,
         relatedFunction: entry.relatedFunction,
-        astNode: entry.astNode,
+        nodePath: entry.nodePath, // carry over the NodePath
       };
 
       if (entry.type === "call" && entry.relatedFunction) {
@@ -680,8 +791,8 @@ export class LambdaFunctionAnalyzer {
   }
 
   /**
-   * Public API: analyze a Serverless function. E.g. handler = "fileName.handler"
-   * => parse "fileName.js" and gather the call graph for "handler".
+   * Public API: analyze a Serverless function.
+   * E.g. handler = "fileName.handler" -> parse "fileName.js" and gather the call graph for "handler".
    */
   public analyzeFunction(
     fn: Serverless.FunctionDefinitionHandler | any
