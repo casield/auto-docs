@@ -2,6 +2,7 @@ import { DroktPlugin } from "./Plugin";
 import "./types";
 
 export * from "./Plugin";
+export * from "./analyzer";
 
 export class LambdaDocsBuilder<T extends DroktTypes.AvailablePlugins> {
   private config: DroktTypes.DroktConfig<T>;

@@ -44,7 +44,9 @@ class ServerlessPlugin {
     }
 
     const artifactName = this.serverless.service.package.artifact;
-    const la = new LambdaFunctionAnalyzer(artifactName);
+    const la = new LambdaFunctionAnalyzer(artifactName, {
+      finalFrameworkSource: "@droktcom/serverless",
+    });
 
     const results = this.serverless.service
       .getAllFunctions()

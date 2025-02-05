@@ -1,5 +1,4 @@
-import { LambdaDocsBuilder } from "@drokt/core";
-import { NodeReturn } from "./analyze-function-v2";
+import { LambdaDocsBuilder, NodeReturn } from "@drokt/core";
 import generator from "@babel/generator";
 
 export const recreateDocs = (

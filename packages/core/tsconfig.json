@@ -3,7 +3,8 @@
   "compilerOptions": {
     "outDir": "./dist",
     "declarationDir": "./dist/declarations",
-    "declaration": true
+    "declaration": true,
+    "sourceMap": true
   },
   "include": ["src"]
 }
