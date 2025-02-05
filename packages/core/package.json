@@ -5,8 +5,9 @@
   "main": "dist/index.js",
   "types": "dist/declarations/index.d.ts",
   "private": true,
+  "target": "es2015",
   "scripts": {
-    "test": "npx jest .",
+    "test": "npx jest",
     "build": "tsc"
   },
   "author": "",
