@@ -44,8 +44,8 @@ class ServerlessPlugin {
     }
 
     const artifactDir = process.cwd();
-    const la = new LambdaFunctionAnalyzer(artifactDir, {
-      finalFrameworkSource: "@droktcom/serverless",
+    const la = new LambdaFunctionAnalyzer(artifactDir, (node) => {
+      return node.final === true;
     });
 
     const results = this.serverless.service
@@ -54,8 +54,6 @@ class ServerlessPlugin {
         const serverlessFn = this.serverless.service.getFunction(functionName);
         return la.analyzeFunction(serverlessFn);
       });
-
-    console.log(JSON.stringify(results, null, 2));
 
     throw new Error("Test error");
   }

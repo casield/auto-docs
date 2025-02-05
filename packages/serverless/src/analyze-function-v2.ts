@@ -1,10 +1,19 @@
 import fs from "fs";
 import path from "path";
 import Serverless from "serverless";
-import { AnalyzerOptions, CodeAnalyzer, ReturnAnalysis } from "@drokt/core";
+import {
+  AnalyzerOptions,
+  CodeAnalyzer,
+  LinkedCallTreeBuilder,
+  NodeReturn,
+  ReturnAnalysis,
+} from "@drokt/core";
 
 export class LambdaFunctionAnalyzer {
-  constructor(private artifactName: string, private options: AnalyzerOptions) {}
+  constructor(
+    private artifactName: string,
+    private isFinal: (node: NodeReturn) => boolean
+  ) {}
 
   // Returns the file content (UTF8) for a given fileName relative to the artifactName (base directory)
   private getFileContent(fileName: string): string | null {
@@ -44,11 +53,9 @@ export class LambdaFunctionAnalyzer {
    * recursively discovers related functions. When available, it uses the CodeAnalyzer’s `importSource`
    * field to resolve the file.
    *
-   * Returns an object mapping resolved file names to their ReturnAnalysis.
+   * Returns a call tree built via the LinkedCallTreeBuilder.
    */
-  public analyzeFunction(fn: Serverless.FunctionDefinitionHandler | any): {
-    [fileName: string]: ReturnAnalysis;
-  } {
+  public analyzeFunction(fn: Serverless.FunctionDefinitionHandler | any) {
     const parts = fn.handler.split(".");
     if (parts.length !== 2) {
       throw new Error("Handler must be in the format 'fileName.functionName'");
@@ -82,7 +89,7 @@ export class LambdaFunctionAnalyzer {
           console.warn(`File ${resolvedFile} not found.`);
           continue;
         }
-        const analyzer = new CodeAnalyzer(resolvedFile, this.options);
+        const analyzer = new CodeAnalyzer(resolvedFile, {});
         const analysis = analyzer.analyzeSource(content);
         analyzedFiles[resolvedFile] = analysis;
       }
@@ -110,6 +117,24 @@ export class LambdaFunctionAnalyzer {
       }
     }
 
-    return analyzedFiles;
+    const codeAnalysisResult = Object.entries(analyzedFiles).map(
+      ([fileName, analysis]) => {
+        const analyzer = new CodeAnalyzer(fileName, {});
+        analyzer.analyzeSource(this.getFileContent(fileName) || "");
+        return {
+          fileName,
+          analysis,
+          importMap: analyzer.importMap,
+        };
+      }
+    );
+
+    const treeBuilder = new LinkedCallTreeBuilder(
+      codeAnalysisResult,
+      this.isFinal
+    );
+
+    const tree = treeBuilder.buildNodeTree(entryFunction, resolvedEntryFile);
+    return tree;
   }
 }

@@ -32,9 +32,11 @@ export class LinkedCallTreeBuilder {
     }
   }
 
+  // Revised: Preserve the full (relative) file path.
   private normalizeFileName(fileRef: string): string {
-    const base = pathnode.basename(fileRef);
-    return base.endsWith(".ts") ? base : `${base}.ts`;
+    return fileRef.endsWith(".ts") || fileRef.endsWith(".js")
+      ? fileRef
+      : `${fileRef}.ts`;
   }
 
   private findFunctionAnalysis(
