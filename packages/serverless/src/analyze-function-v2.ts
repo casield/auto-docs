@@ -11,13 +11,14 @@ import {
 
 export class LambdaFunctionAnalyzer {
   constructor(
+    // artifactName is the base directory for your source files.
     private artifactName: string,
+    // isFinal is a predicate that will be passed to the call tree builder.
     private isFinal: (node: NodeReturn) => boolean
   ) {}
 
-  // Returns the file content (UTF8) for a given fileName relative to the artifactName (base directory)
+  // Reads a file relative to the artifactName (base directory)
   private getFileContent(fileName: string): string | null {
-    // Use path.resolve to get an absolute path
     const filePath = path.resolve(this.artifactName, fileName);
     if (fs.existsSync(filePath)) {
       return fs.readFileSync(filePath, "utf8");
@@ -38,8 +39,7 @@ export class LambdaFunctionAnalyzer {
     return null;
   }
 
-  // Resolves a file name. If the name already includes an extension, we check that file;
-  // otherwise, we try the candidate names.
+  // If the fileName already ends with .ts or .js, check if it exists; otherwise, try candidate names.
   private resolveFile(fileName: string): string | null {
     if (fileName.endsWith(".ts") || fileName.endsWith(".js")) {
       return this.getFileContent(fileName) ? fileName : null;
@@ -49,13 +49,17 @@ export class LambdaFunctionAnalyzer {
 
   /**
    * Analyzes the given serverless function. The handler must be in the format "fileName.functionName".
-   * Starting from the entry file/function, this method uses CodeAnalyzer to analyze the file and then
-   * recursively discovers related functions. When available, it uses the CodeAnalyzer’s `importSource`
-   * field to resolve the file.
+   * Starting from the entry file/function, this method uses CodeAnalyzer to analyze that file and then
+   * recursively discovers related functions. When available, it uses the CodeAnalyzer’s importSource field
+   * to resolve the file.
    *
-   * Returns a call tree built via the LinkedCallTreeBuilder.
+   * Finally, a call tree is built using the LinkedCallTreeBuilder.
+   *
+   * Returns the call tree.
    */
-  public analyzeFunction(fn: Serverless.FunctionDefinitionHandler | any) {
+  public analyzeFunction(
+    fn: Serverless.FunctionDefinitionHandler | any
+  ): NodeReturn {
     const parts = fn.handler.split(".");
     if (parts.length !== 2) {
       throw new Error("Handler must be in the format 'fileName.functionName'");
@@ -68,7 +72,7 @@ export class LambdaFunctionAnalyzer {
       );
     }
 
-    // Cache of analyzed files: { fileName: ReturnAnalysis }
+    // Cache of analyzed files: maps resolved file names to their ReturnAnalysis.
     const analyzedFiles: { [fileName: string]: ReturnAnalysis } = {};
 
     // Pending queue of { file, functionName } pairs to process.
@@ -89,7 +93,7 @@ export class LambdaFunctionAnalyzer {
           console.warn(`File ${resolvedFile} not found.`);
           continue;
         }
-        const analyzer = new CodeAnalyzer(resolvedFile, {});
+        const analyzer = new CodeAnalyzer(resolvedFile, {} as AnalyzerOptions);
         const analysis = analyzer.analyzeSource(content);
         analyzedFiles[resolvedFile] = analysis;
       }
@@ -99,10 +103,11 @@ export class LambdaFunctionAnalyzer {
         for (const ret of funcAnalysis.returnStatements) {
           if (ret.type === "call" && ret.relatedFunction) {
             let candidateFile: string | null = null;
-            // Use the importSource from the analyzer result, if available.
+            // If the analyzer provided an importSource, try resolving that first.
             if (ret.importSource) {
               candidateFile = this.resolveFile(ret.importSource);
             }
+            // Otherwise, try the candidate file based on the related function name.
             if (!candidateFile) {
               candidateFile = this.getCandidateFile(ret.relatedFunction);
             }
@@ -117,9 +122,11 @@ export class LambdaFunctionAnalyzer {
       }
     }
 
+    // Prepare an array of CodeAnalysisResults for the call tree builder.
     const codeAnalysisResult = Object.entries(analyzedFiles).map(
       ([fileName, analysis]) => {
-        const analyzer = new CodeAnalyzer(fileName, {});
+        // Re-run the analyzer to get the importMap for each file.
+        const analyzer = new CodeAnalyzer(fileName, {} as AnalyzerOptions);
         analyzer.analyzeSource(this.getFileContent(fileName) || "");
         return {
           fileName,
@@ -133,8 +140,8 @@ export class LambdaFunctionAnalyzer {
       codeAnalysisResult,
       this.isFinal
     );
-
     const tree = treeBuilder.buildNodeTree(entryFunction, resolvedEntryFile);
+    console.log(treeBuilder.visualizeTree(tree));
     return tree;
   }
 }

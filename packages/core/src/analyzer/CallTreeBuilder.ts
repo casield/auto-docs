@@ -27,23 +27,34 @@ export class LinkedCallTreeBuilder {
     private isFinalFn: (node: NodeReturn) => boolean
   ) {
     for (const result of analysisResults) {
-      this.analyses[result.fileName] = result.analysis;
+      // Remove any .ts or .js extension from the file name before using it as a key.
+      const normalizedFileName = this.normalizeFileKey(result.fileName);
+      this.analyses[normalizedFileName] = result.analysis;
+      // (Assuming the importMap values already use the normalized file names—or you may need
+      // to process them similarly.)
       Object.assign(this.combinedImportMap, result.importMap);
     }
   }
 
-  // Revised: Preserve the full (relative) file path.
+  // Helper: remove .ts or .js extension from a file path.
+  private normalizeFileKey(file: string): string {
+    return file.replace(/\.ts$|\.js$/, "");
+  }
+
+  // Use this method when you need a normalized version of a file reference.
   private normalizeFileName(fileRef: string): string {
+    // If the fileRef already ends with .ts or .js, remove it; otherwise, assume it's already normalized.
     return fileRef.endsWith(".ts") || fileRef.endsWith(".js")
-      ? fileRef
-      : `${fileRef}.ts`;
+      ? fileRef.replace(/\.ts$|\.js$/, "")
+      : fileRef;
   }
 
   private findFunctionAnalysis(
     functionName: string,
     currentFile: string
   ): ReturnAnalysis["functions"][string] | null {
-    const currentAnalysis = this.analyses[currentFile];
+    const normalizedCurrentFile = this.normalizeFileKey(currentFile);
+    const currentAnalysis = this.analyses[normalizedCurrentFile];
     if (currentAnalysis && currentAnalysis.functions[functionName]) {
       return currentAnalysis.functions[functionName];
     }
@@ -75,7 +86,8 @@ export class LinkedCallTreeBuilder {
     currentFile: string,
     visited = new Set<string>()
   ): NodeReturn {
-    const key = `${currentFile}:${functionName}`;
+    const normalizedCurrentFile = this.normalizeFileKey(currentFile);
+    const key = `${normalizedCurrentFile}:${functionName}`;
     if (visited.has(key)) {
       return {
         type: "unknown",
@@ -121,13 +133,11 @@ export class LinkedCallTreeBuilder {
           const [className] = entry.relatedFunction.split(".");
           const targetRef = this.combinedImportMap[className];
           targetFile = targetRef
-            ? this.normalizeFileName(targetRef)
+            ? targetRef // Assume targetRef is already normalized.
             : currentFile;
         } else {
           const targetRef = this.combinedImportMap[entry.relatedFunction];
-          targetFile = targetRef
-            ? this.normalizeFileName(targetRef)
-            : currentFile;
+          targetFile = targetRef ? targetRef : currentFile;
         }
 
         const childTree = this.buildNodeTree(
