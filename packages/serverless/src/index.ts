@@ -55,7 +55,7 @@ class ServerlessPlugin {
         return la.analyzeFunction(serverlessFn);
       });
 
-    recreateDocs(results, this.builder);
+    console.log(JSON.stringify(results, null, 2));
 
     throw new Error("Test error");
   }

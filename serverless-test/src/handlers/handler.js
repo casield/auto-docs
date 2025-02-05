@@ -1,7 +1,5 @@
 import { response } from "@drokt/serverless";
-
-const { otherImport } = require("../other/other-import");
-
+import { otherImport } from "../other/other-import";
 /**
  * My Description
  * @param {*} event

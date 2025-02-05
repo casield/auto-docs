@@ -1,143 +1,115 @@
-// LambdaFunctionAnalyzer.ts (modified excerpt)
 import AdmZip from "adm-zip";
 import Serverless from "serverless";
-import {
-  ReturnAnalysis,
-  AnalyzerOptions,
-  CodeAnalyzer,
-  ReturnStatementEntry,
-  NodeReturn,
-  CallTreeBuilder,
-} from "@drokt/core";
+import { AnalyzerOptions, CodeAnalyzer, ReturnAnalysis } from "@drokt/core";
 
 export class LambdaFunctionAnalyzer {
   private zip: AdmZip;
   private zipEntries: AdmZip.IZipEntry[];
-  private analyzedFiles: Set<string> = new Set();
-  private analyses: Record<string, ReturnAnalysis> = {};
-  private functionDescriptions: Record<string, string> = {};
-  private globalFinalFunctions: Set<string> = new Set();
-  // NEW: Global import map: imported function (or module) name -> file name.
-  private globalImportMap: Record<string, string> = {};
 
   constructor(private artifactName: string, private options: AnalyzerOptions) {
     this.zip = new AdmZip(artifactName);
     this.zipEntries = this.zip.getEntries();
   }
 
+  // Returns the file content (UTF8) for a given fileName if present in the artifact.
   private getFileContent(fileName: string): string | null {
     const entry = this.zipEntries.find((entry) => entry.entryName === fileName);
     return entry ? entry.getData().toString("utf8") : null;
   }
 
-  /**
-   * Analyze a file if it has not already been analyzed.
-   */
-  private analyzeFile(fileName: string, targetFunction: string): void {
-    if (this.analyzedFiles.has(fileName)) return;
-    const content = this.getFileContent(fileName);
-    if (!content) {
-      throw new Error(`File ${fileName} not found in the artifact.`);
+  // Given a base name (without extension), try to find a .ts file first, then a .js file.
+  private getCandidateFile(baseName: string): string | null {
+    const tsName = baseName + ".ts";
+    if (this.getFileContent(tsName)) {
+      return tsName;
     }
-    this.analyzedFiles.add(fileName);
+    const jsName = baseName + ".js";
+    if (this.getFileContent(jsName)) {
+      return jsName;
+    }
+    return null;
+  }
 
-    const analyzer = new CodeAnalyzer(fileName, this.options);
-    const analysis = analyzer.analyzeSource(content, targetFunction);
-    this.analyses[fileName] = analysis;
-    Object.assign(this.functionDescriptions, analyzer.functionDescriptions);
-    analyzer
-      .getFinalFunctions()
-      .forEach((fn) => this.globalFinalFunctions.add(fn));
-    // Merge the local importMap into our global import map.
-    Object.assign(this.globalImportMap, analyzer.importMap);
+  // Resolves a file name. If the name already includes an extension, we check that file;
+  // otherwise, we try the candidate names.
+  private resolveFile(fileName: string): string | null {
+    if (fileName.endsWith(".ts") || fileName.endsWith(".js")) {
+      return this.getFileContent(fileName) ? fileName : null;
+    }
+    return this.getCandidateFile(fileName);
   }
 
   /**
-   * Check if any analyzed file already defines the given function.
+   * Analyzes the given serverless function. The handler must be in the format "fileName.functionName".
+   * Starting from the entry file/function, this method uses CodeAnalyzer to analyze the file and then
+   * recursively discovers related functions. When available, it uses the CodeAnalyzer’s `importSource`
+   * field to resolve the file.
+   *
+   * Returns an object mapping resolved file names to their ReturnAnalysis.
    */
-  private hasFunctionAnalysis(functionName: string): boolean {
-    return Object.values(this.analyses).some((analysis) => {
-      return (
-        analysis.returnStatements[functionName] ||
-        (analysis.classMethods && analysis.classMethods[functionName])
-      );
-    });
-  }
-
-  /**
-   * Recursively traverse the call chain starting at functionName.
-   * For each call entry (with a relatedFunction) that isn’t yet analyzed,
-   * consult the global import map and analyze the file if possible.
-   */
-  private traverseCallChain(functionName: string, visited = new Set<string>()) {
-    if (visited.has(functionName)) return;
-    visited.add(functionName);
-
-    // If we don’t have an analysis for this function yet, check the global import map.
-    if (!this.hasFunctionAnalysis(functionName)) {
-      const possibleFile = this.globalImportMap[functionName];
-      if (possibleFile) {
-        // Use the function name as the target function.
-        this.analyzeFile(possibleFile, functionName);
-      }
-    }
-
-    // Find the return entries for this function (from any analyzed file).
-    let entries: ReturnStatementEntry[] | null = null;
-    for (const analysis of Object.values(this.analyses)) {
-      if (analysis.returnStatements[functionName]) {
-        entries = analysis.returnStatements[functionName];
-        break;
-      }
-      if (analysis.classMethods && analysis.classMethods[functionName]) {
-        entries = analysis.classMethods[functionName];
-        break;
-      }
-    }
-    if (!entries) return;
-
-    // For each call return, try to traverse further.
-    for (const entry of entries) {
-      if (entry.type === "call" && entry.relatedFunction) {
-        this.traverseCallChain(entry.relatedFunction, visited);
-      }
-    }
-  }
-
-  /**
-   * Determines if a function is "final" based on the global final functions.
-   */
-  private isFinalFunction(functionName: string): boolean {
-    return this.globalFinalFunctions.has(functionName);
-  }
-
-  /**
-   * Public API: Analyze a Serverless function.
-   * Example: if fn.handler is "functions/hello.handler", then "functions/hello.js"
-   * is analyzed and the call graph for "handler" is built.
-   */
-  public analyzeFunction(
-    fn: Serverless.FunctionDefinitionHandler | any
-  ): NodeReturn {
+  public analyzeFunction(fn: Serverless.FunctionDefinitionHandler | any): {
+    [fileName: string]: ReturnAnalysis;
+  } {
     const parts = fn.handler.split(".");
     if (parts.length !== 2) {
       throw new Error("Handler must be in the format 'fileName.functionName'");
     }
-    const [handlerFilePath, mainFunctionName] = parts;
-    const handlerFileName = handlerFilePath + ".js";
+    let [entryFile, entryFunction] = parts;
+    const resolvedEntryFile = this.resolveFile(entryFile);
+    if (!resolvedEntryFile) {
+      throw new Error(
+        `Entry file ${entryFile} could not be resolved (tried .ts and .js)`
+      );
+    }
 
-    // Analyze the top-level lambda file.
-    this.analyzeFile(handlerFileName, mainFunctionName);
-    // Recursively follow the call chain from the top function.
-    this.traverseCallChain(mainFunctionName);
+    // Cache of analyzed files: { fileName: ReturnAnalysis }
+    const analyzedFiles: { [fileName: string]: ReturnAnalysis } = {};
 
-    // Build the call tree using the call tree builder.
-    const treeBuilder = new CallTreeBuilder(
-      this.analyses,
-      this.functionDescriptions,
-      (fnName: string) => this.isFinalFunction(fnName)
-    );
+    // Pending queue of {file, functionName} pairs to process.
+    const pending: Array<{ file: string; functionName: string }> = [
+      { file: resolvedEntryFile, functionName: entryFunction },
+    ];
 
-    return treeBuilder.buildNodeTreeForFunction(mainFunctionName);
+    while (pending.length > 0) {
+      const { file, functionName } = pending.pop()!;
+      const resolvedFile = this.resolveFile(file);
+      if (!resolvedFile) {
+        console.warn(`File ${file} not found in artifact.`);
+        continue;
+      }
+      if (!analyzedFiles[resolvedFile]) {
+        const content = this.getFileContent(resolvedFile);
+        if (!content) {
+          console.warn(`File ${resolvedFile} not found in artifact.`);
+          continue;
+        }
+        const analyzer = new CodeAnalyzer(resolvedFile, this.options);
+        const analysis = analyzer.analyzeSource(content);
+        analyzedFiles[resolvedFile] = analysis;
+      }
+      const analysis = analyzedFiles[resolvedFile];
+      const funcAnalysis = analysis.functions[functionName];
+      if (funcAnalysis) {
+        for (const ret of funcAnalysis.returnStatements) {
+          if (ret.type === "call" && ret.relatedFunction) {
+            let candidateFile: string | null = null;
+            if (ret.importSource) {
+              candidateFile = this.resolveFile(ret.importSource);
+            }
+            if (!candidateFile) {
+              candidateFile = this.getCandidateFile(ret.relatedFunction);
+            }
+            if (candidateFile && !analyzedFiles[candidateFile]) {
+              pending.push({
+                file: candidateFile,
+                functionName: ret.relatedFunction,
+              });
+            }
+          }
+        }
+      }
+    }
+
+    return analyzedFiles;
   }
 }
