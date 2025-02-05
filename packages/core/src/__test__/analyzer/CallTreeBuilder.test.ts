@@ -1,4 +1,4 @@
-// LinkedCallTreeBuilder.test.ts
+// CallTreeBuilder.test.ts
 import { CodeAnalyzer, ReturnAnalysis } from "../../analyzer/CodeAnalyzer";
 import {
   LinkedCallTreeBuilder,
@@ -23,18 +23,38 @@ describe("LinkedCallTreeBuilder with multiple files", () => {
       }
     `;
     const sourceFile3 = `
+      import { Foo } from "./file4";
       export function baz() {
-        return "baz";
+        const f = new Foo();
+        return f.bar();
       }
     `;
+
+    const sourceFile4 = `
+      export class Foo {
+
+        public foo() {
+          return "bar";
+        }
+
+        public bar() {
+          if (true) {
+            return "baz";
+          }
+          return this.foo();
+        }
+      }
+      `;
 
     const analyzer1 = new CodeAnalyzer("file1.ts", {});
     const analyzer2 = new CodeAnalyzer("file2.ts", {});
     const analyzer3 = new CodeAnalyzer("file3.ts", {});
+    const analyzer4 = new CodeAnalyzer("file4.ts", {});
 
     const analysis1: ReturnAnalysis = analyzer1.analyzeSource(sourceFile1);
     const analysis2: ReturnAnalysis = analyzer2.analyzeSource(sourceFile2);
     const analysis3: ReturnAnalysis = analyzer3.analyzeSource(sourceFile3);
+    const analysis4: ReturnAnalysis = analyzer4.analyzeSource(sourceFile4);
 
     const analysisResults: CodeAnalysisResult[] = [
       {
@@ -52,6 +72,11 @@ describe("LinkedCallTreeBuilder with multiple files", () => {
         analysis: analysis3,
         importMap: analyzer3.importMap,
       },
+      {
+        fileName: "file4.ts",
+        analysis: analysis4,
+        importMap: analyzer4.importMap,
+      },
     ];
 
     // For this test, we assume that the import maps have entries like:
@@ -59,9 +84,10 @@ describe("LinkedCallTreeBuilder with multiple files", () => {
     //   "baz": "./file3"
     // The builder will normalize these to "file2.ts" and "file3.ts", respectively.
     // (If needed, you can adjust your analyzer's importMap accordingly.)
-
-    const isFinalFn = (fnName: string) => fnName === "baz";
-    const builder = new LinkedCallTreeBuilder(analysisResults, isFinalFn);
+    const builder = new LinkedCallTreeBuilder(
+      analysisResults,
+      (node) => node.value === "baz"
+    );
     const tree: NodeReturn = builder.buildNodeTree("foo", "file1.ts");
     console.log(builder.visualizeTree(tree));
 

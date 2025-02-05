@@ -1,19 +1,17 @@
-// CodeAnalyzer.ts
 import * as parser from "@babel/parser";
 import generator from "@babel/generator";
 import traverse, { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 import pathnode from "path";
 
-// Extended return entry type with an optional comment field.
 export type ReturnStatementEntry = {
   type: "call" | "literal" | "object" | "unknown";
   value: string;
   relatedFunction?: string;
-  importSource?: string; // Where the function was imported from
+  importSource?: string;
   nodePath?: NodePath;
-  className?: string; // If coming from a class method, record the class.
-  comment?: string; // NEW: Comments attached directly to the return statement.
+  className?: string;
+  comment?: string;
 };
 
 export type FunctionAnalysis = {
@@ -96,6 +94,8 @@ export class CodeAnalyzer {
                 ] = `${className}.${methodName}`;
               }
             }
+          } else if (t.isNewExpression(init) && t.isIdentifier(init.callee)) {
+            variableAssignments[variableName] = init.callee.name;
           }
         },
       });
@@ -118,7 +118,6 @@ export class CodeAnalyzer {
             ...extra,
           };
 
-          // Capture comments attached directly to this return statement.
           if (returnPath.node.leadingComments) {
             entry.comment = returnPath.node.leadingComments
               .map((c) => c.value.trim())
@@ -140,10 +139,28 @@ export class CodeAnalyzer {
             if (t.isIdentifier(callee)) {
               entry.relatedFunction = callee.name;
             } else if (t.isMemberExpression(callee)) {
-              if (t.isIdentifier(callee.property)) {
-                entry.relatedFunction = callee.property.name;
-              }
-              if (t.isNewExpression(callee.object)) {
+              if (t.isIdentifier(callee.object)) {
+                const instanceName = callee.object.name;
+                if (variableAssignments[instanceName]) {
+                  entry.relatedFunction = `${
+                    variableAssignments[instanceName]
+                  }${
+                    t.isIdentifier(callee.property)
+                      ? `.${callee.property.name}`
+                      : ""
+                  }`;
+                } else if (t.isIdentifier(callee.property)) {
+                  entry.relatedFunction = callee.property.name;
+                }
+              } else if (t.isThisExpression(callee.object)) {
+                if (
+                  t.isIdentifier(callee.property) &&
+                  extra &&
+                  extra.className
+                ) {
+                  entry.relatedFunction = `${extra.className}.${callee.property.name}`;
+                }
+              } else if (t.isNewExpression(callee.object)) {
                 const newExpr = callee.object;
                 if (t.isIdentifier(newExpr.callee)) {
                   const className = newExpr.callee.name;
@@ -165,10 +182,20 @@ export class CodeAnalyzer {
               if (t.isIdentifier(callee)) {
                 entry.relatedFunction = callee.name;
               } else if (t.isMemberExpression(callee)) {
-                if (t.isIdentifier(callee.property)) {
-                  entry.relatedFunction = callee.property.name;
-                }
-                if (t.isNewExpression(callee.object)) {
+                if (t.isIdentifier(callee.object)) {
+                  const instanceName = callee.object.name;
+                  if (variableAssignments[instanceName]) {
+                    entry.relatedFunction = `${
+                      variableAssignments[instanceName]
+                    }${
+                      t.isIdentifier(callee.property)
+                        ? `.${callee.property.name}`
+                        : ""
+                    }`;
+                  } else if (t.isIdentifier(callee.property)) {
+                    entry.relatedFunction = callee.property.name;
+                  }
+                } else if (t.isNewExpression(callee.object)) {
                   const newExpr = callee.object;
                   if (t.isIdentifier(newExpr.callee)) {
                     const className = newExpr.callee.name;
