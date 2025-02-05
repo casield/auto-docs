@@ -43,8 +43,8 @@ class ServerlessPlugin {
       throw new Error("Builder not initialized");
     }
 
-    const artifactName = this.serverless.service.package.artifact;
-    const la = new LambdaFunctionAnalyzer(artifactName, {
+    const artifactDir = process.cwd();
+    const la = new LambdaFunctionAnalyzer(artifactDir, {
       finalFrameworkSource: "@droktcom/serverless",
     });
 

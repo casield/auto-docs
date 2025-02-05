@@ -5,7 +5,7 @@ import { otherImport } from "../other/other-import";
  * @param {*} event
  * @returns
  */
-export const hello = async (event) => {
+export const hello = async (event: any) => {
   if (event.queryStringParameters && event.queryStringParameters.other) {
     return await otherImport();
   }

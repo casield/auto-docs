@@ -1,8 +1,14 @@
 import { response } from "@drokt/serverless";
 import { mImport } from "./m-import";
 
+/**
+ * My Description
+ *
+ * @returns
+ */
 export const otherImport = async () => {
-  return "otherImport";
+  // This is a comment
+  return mImport();
 };
 
 class MyClass {

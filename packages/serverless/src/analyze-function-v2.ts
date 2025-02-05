@@ -1,20 +1,19 @@
-import AdmZip from "adm-zip";
+import fs from "fs";
+import path from "path";
 import Serverless from "serverless";
 import { AnalyzerOptions, CodeAnalyzer, ReturnAnalysis } from "@drokt/core";
 
 export class LambdaFunctionAnalyzer {
-  private zip: AdmZip;
-  private zipEntries: AdmZip.IZipEntry[];
+  constructor(private artifactName: string, private options: AnalyzerOptions) {}
 
-  constructor(private artifactName: string, private options: AnalyzerOptions) {
-    this.zip = new AdmZip(artifactName);
-    this.zipEntries = this.zip.getEntries();
-  }
-
-  // Returns the file content (UTF8) for a given fileName if present in the artifact.
+  // Returns the file content (UTF8) for a given fileName relative to the artifactName (base directory)
   private getFileContent(fileName: string): string | null {
-    const entry = this.zipEntries.find((entry) => entry.entryName === fileName);
-    return entry ? entry.getData().toString("utf8") : null;
+    // Use path.resolve to get an absolute path
+    const filePath = path.resolve(this.artifactName, fileName);
+    if (fs.existsSync(filePath)) {
+      return fs.readFileSync(filePath, "utf8");
+    }
+    return null;
   }
 
   // Given a base name (without extension), try to find a .ts file first, then a .js file.
@@ -65,7 +64,7 @@ export class LambdaFunctionAnalyzer {
     // Cache of analyzed files: { fileName: ReturnAnalysis }
     const analyzedFiles: { [fileName: string]: ReturnAnalysis } = {};
 
-    // Pending queue of {file, functionName} pairs to process.
+    // Pending queue of { file, functionName } pairs to process.
     const pending: Array<{ file: string; functionName: string }> = [
       { file: resolvedEntryFile, functionName: entryFunction },
     ];
@@ -74,13 +73,13 @@ export class LambdaFunctionAnalyzer {
       const { file, functionName } = pending.pop()!;
       const resolvedFile = this.resolveFile(file);
       if (!resolvedFile) {
-        console.warn(`File ${file} not found in artifact.`);
+        console.warn(`File ${file} not found.`);
         continue;
       }
       if (!analyzedFiles[resolvedFile]) {
         const content = this.getFileContent(resolvedFile);
         if (!content) {
-          console.warn(`File ${resolvedFile} not found in artifact.`);
+          console.warn(`File ${resolvedFile} not found.`);
           continue;
         }
         const analyzer = new CodeAnalyzer(resolvedFile, this.options);
@@ -93,6 +92,7 @@ export class LambdaFunctionAnalyzer {
         for (const ret of funcAnalysis.returnStatements) {
           if (ret.type === "call" && ret.relatedFunction) {
             let candidateFile: string | null = null;
+            // Use the importSource from the analyzer result, if available.
             if (ret.importSource) {
               candidateFile = this.resolveFile(ret.importSource);
             }
