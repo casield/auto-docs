@@ -5,65 +5,59 @@ import traverse, { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 import pathnode from "path";
 
-// Extended return entry type: add an optional className field.
+// Extended return entry type with an optional comment field.
 export type ReturnStatementEntry = {
   type: "call" | "literal" | "object" | "unknown";
   value: string;
   relatedFunction?: string;
   importSource?: string; // Where the function was imported from
   nodePath?: NodePath;
-  className?: string; // NEW: If coming from a class method, record the class.
+  className?: string; // If coming from a class method, record the class.
+  comment?: string; // NEW: Comments attached directly to the return statement.
+};
+
+export type FunctionAnalysis = {
+  comment?: string;
+  returnStatements: ReturnStatementEntry[];
 };
 
 export type ReturnAnalysis = {
-  // Now, both function declarations and class methods are merged here.
-  returnStatements: Record<string, ReturnStatementEntry[]>;
+  functions: Record<string, FunctionAnalysis>;
 };
 
 export interface AnalyzerOptions {}
 
 export class CodeAnalyzer {
-  // Captures leading comments for functions.
-  public functionDescriptions: Record<string, string> = {};
-  // Record imported names to file paths.
   public importMap: Record<string, string> = {};
 
   constructor(private fileName: string, private options: AnalyzerOptions) {}
 
-  /**
-   * Analyze the given source and return ALL return statements found,
-   * keyed by function name. For class methods, the key is of the form "ClassName.methodName"
-   * and each entry will include a `className` attribute.
-   */
   public analyzeSource(source: string): ReturnAnalysis {
     const ast = parser.parse(source, {
       sourceType: "module",
       plugins: ["typescript", "jsx"],
     });
 
-    // All return statements—this mapping now includes both ordinary functions and class methods.
-    const returnStatements: Record<string, ReturnStatementEntry[]> = {};
-    // Build a local import map.
+    const functionsAnalysis: Record<string, FunctionAnalysis> = {};
     const localImportMap: Record<string, string> = {};
-
-    // Map variable names to the function names they’re assigned to.
     const variableAssignments: Record<string, string> = {};
 
-    // Helper: add an entry only if one with the same start location doesn't exist.
-    const addReturnEntry = (
-      functionName: string,
-      entry: ReturnStatementEntry
-    ) => {
-      if (!returnStatements[functionName]) {
-        returnStatements[functionName] = [];
+    const ensureFunctionAnalysis = (funcName: string): FunctionAnalysis => {
+      if (!functionsAnalysis[funcName]) {
+        functionsAnalysis[funcName] = { returnStatements: [] };
       }
+      return functionsAnalysis[funcName];
+    };
+
+    const addReturnEntry = (funcName: string, entry: ReturnStatementEntry) => {
+      const analysis = ensureFunctionAnalysis(funcName);
       const entryStart = entry.nodePath?.node.start;
       if (
-        !returnStatements[functionName].some(
+        !analysis.returnStatements.some(
           (existing) => existing.nodePath?.node.start === entryStart
         )
       ) {
-        returnStatements[functionName].push(entry);
+        analysis.returnStatements.push(entry);
       }
     };
 
@@ -77,7 +71,6 @@ export class CodeAnalyzer {
           const init = variablePath.node.init;
           if (!init) return;
 
-          // Example: const x = someFunction();
           if (
             t.isAwaitExpression(init) &&
             t.isCallExpression(init.argument) &&
@@ -86,9 +79,7 @@ export class CodeAnalyzer {
             variableAssignments[variableName] = init.argument.callee.name;
           } else if (t.isCallExpression(init) && t.isIdentifier(init.callee)) {
             variableAssignments[variableName] = init.callee.name;
-          }
-          // Example: const x = new MyClass().myMethod();
-          else if (
+          } else if (
             t.isCallExpression(init) &&
             t.isMemberExpression(init.callee) &&
             t.isNewExpression(init.callee.object)
@@ -112,7 +103,7 @@ export class CodeAnalyzer {
 
     const collectReturnStatements = (
       path: NodePath,
-      functionName: string,
+      funcName: string,
       extra?: { className?: string }
     ) => {
       collectVariableAssignments(path);
@@ -127,7 +118,13 @@ export class CodeAnalyzer {
             ...extra,
           };
 
-          // Case A: Returning an identifier (a variable)
+          // Capture comments attached directly to this return statement.
+          if (returnPath.node.leadingComments) {
+            entry.comment = returnPath.node.leadingComments
+              .map((c) => c.value.trim())
+              .join("\n");
+          }
+
           if (t.isIdentifier(returnPath.node.argument)) {
             const variableName = returnPath.node.argument.name;
             if (variableAssignments[variableName]) {
@@ -137,9 +134,7 @@ export class CodeAnalyzer {
             } else {
               entry.type = "literal";
             }
-          }
-          // Case B: Returning a call expression
-          else if (t.isCallExpression(returnPath.node.argument)) {
+          } else if (t.isCallExpression(returnPath.node.argument)) {
             entry.type = "call";
             const callee = returnPath.node.argument.callee;
             if (t.isIdentifier(callee)) {
@@ -161,9 +156,7 @@ export class CodeAnalyzer {
                 }
               }
             }
-          }
-          // Case C: Returning an await expression wrapping a call.
-          else if (t.isAwaitExpression(returnPath.node.argument)) {
+          } else if (t.isAwaitExpression(returnPath.node.argument)) {
             const awaitedExpression = returnPath.node.argument.argument;
             returnCode = generator(awaitedExpression).code;
             if (t.isCallExpression(awaitedExpression)) {
@@ -190,37 +183,29 @@ export class CodeAnalyzer {
               }
               entry.value = returnCode;
             }
-          }
-          // Case D: Returning a literal value (number, string, boolean, or null)
-          else if (
+          } else if (
             t.isNumericLiteral(returnPath.node.argument) ||
             t.isStringLiteral(returnPath.node.argument) ||
             t.isBooleanLiteral(returnPath.node.argument) ||
             t.isNullLiteral(returnPath.node.argument)
           ) {
             entry.type = "literal";
-          }
-          // Case E: Returning an object expression.
-          else if (t.isObjectExpression(returnPath.node.argument)) {
+          } else if (t.isObjectExpression(returnPath.node.argument)) {
             entry.type = "object";
           }
 
-          // If the entry is a call and we have an import mapping for the related function,
-          // record the source.
           if (entry.type === "call" && entry.relatedFunction) {
             const importedFrom = localImportMap[entry.relatedFunction];
             if (importedFrom) {
               entry.importSource = importedFrom;
             }
           }
-          addReturnEntry(functionName, entry);
+          addReturnEntry(funcName, entry);
         },
       });
     };
 
-    // --- AST Traversal ---
     traverse(ast, {
-      // Handle require() calls (CommonJS)
       CallExpression: (path) => {
         if (
           t.isIdentifier(path.node.callee) &&
@@ -228,7 +213,6 @@ export class CodeAnalyzer {
           t.isStringLiteral(path.node.arguments[0])
         ) {
           const importPath = path.node.arguments[0].value;
-          // For file paths, join with the directory; for modules, leave as is.
           const resolvedPath =
             importPath.startsWith("./") || importPath.startsWith("../")
               ? pathnode
@@ -238,7 +222,6 @@ export class CodeAnalyzer {
           localImportMap[importPath] = resolvedPath;
         }
       },
-      // Handle ES Module imports
       ImportDeclaration: (path) => {
         const source = path.node.source.value;
         const resolvedPath =
@@ -259,7 +242,6 @@ export class CodeAnalyzer {
           }
         }
       },
-      // Process function declarations.
       FunctionDeclaration: (path) => {
         if (path.node.id && path.node.id.name) {
           const funcName = path.node.id.name;
@@ -268,11 +250,10 @@ export class CodeAnalyzer {
             const commentText = path.node.leadingComments
               .map((c) => c.value.trim())
               .join("\n");
-            this.functionDescriptions[funcName] = commentText;
+            ensureFunctionAnalysis(funcName).comment = commentText;
           }
         }
       },
-      // Process exported arrow functions.
       ExportNamedDeclaration: (exportPath) => {
         const decl = exportPath.node.declaration;
         if (t.isVariableDeclaration(decl)) {
@@ -301,14 +282,13 @@ export class CodeAnalyzer {
                     .join("\n");
                 }
                 if (commentText) {
-                  this.functionDescriptions[funcName] = commentText;
+                  ensureFunctionAnalysis(funcName).comment = commentText;
                 }
               }
             }
           }
         }
       },
-      // Process assignment expressions (e.g. module.exports = () => { ... })
       AssignmentExpression: (path) => {
         const left = path.node.left;
         const funcName =
@@ -330,11 +310,10 @@ export class CodeAnalyzer {
             .map((c) => c.value.trim())
             .join("\n");
           if (commentText) {
-            this.functionDescriptions[funcName] = commentText;
+            ensureFunctionAnalysis(funcName).comment = commentText;
           }
         }
       },
-      // Process variable declarations for arrow functions.
       VariableDeclaration: (path) => {
         path.node.declarations.forEach((declaration) => {
           if (
@@ -366,13 +345,12 @@ export class CodeAnalyzer {
                   .join("\n");
               }
               if (commentText) {
-                this.functionDescriptions[funcName] = commentText;
+                ensureFunctionAnalysis(funcName).comment = commentText;
               }
             }
           }
         });
       },
-      // Process class declarations.
       ClassDeclaration: (classPath) => {
         if (!t.isIdentifier(classPath.node.id)) return;
         const className = classPath.node.id.name;
@@ -382,9 +360,7 @@ export class CodeAnalyzer {
             continue;
           if (!t.isIdentifier(method.key)) continue;
           const methodName = method.key.name;
-          // Create a unique function key combining the class name and method name.
           const uniqueFuncName = `${className}.${methodName}`;
-          // When processing class methods, pass in extra info (the className).
           const extra = { className };
           const methodBodyPath = classPath
             .get("body")
@@ -393,19 +369,17 @@ export class CodeAnalyzer {
           if (methodBodyPath) {
             collectReturnStatements(methodBodyPath, uniqueFuncName, extra);
           }
-          // Optionally, capture any leading comments for the method.
           if (method.leadingComments) {
             const commentText = method.leadingComments
               .map((c) => c.value.trim())
               .join("\n");
-            this.functionDescriptions[uniqueFuncName] = commentText;
+            ensureFunctionAnalysis(uniqueFuncName).comment = commentText;
           }
         }
       },
     });
 
-    // Merge the local import map into the instance’s importMap.
     Object.assign(this.importMap, localImportMap);
-    return { returnStatements };
+    return { functions: functionsAnalysis };
   }
 }

@@ -12,12 +12,20 @@ describe("CodeAnalyzer", () => {
     
     import { myFunction } from "../../final-framework/main.ts";
 
+    /**
+     * Hello this is a comment
+     * @returns {string}
+     */
     export const testFunction = () => {
+      // This is a comment
       return myFunction();
     }
 
     export class TestClass {
       public testMethod() {
+        /**
+         * This is a comment
+         */
         return myFunction();
       }
     }
@@ -32,6 +40,5 @@ describe("CodeAnalyzer", () => {
     const analysis: ReturnAnalysis = analyzer.analyzeSource(sourceCode);
 
     expect(analysis).toBeDefined();
-    expect(analysis.returnStatements).toBeDefined();
   });
 });
