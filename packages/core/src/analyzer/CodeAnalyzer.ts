@@ -182,7 +182,15 @@ export class CodeAnalyzer {
               if (t.isIdentifier(callee)) {
                 entry.relatedFunction = callee.name;
               } else if (t.isMemberExpression(callee)) {
-                if (t.isIdentifier(callee.object)) {
+                if (t.isThisExpression(callee.object)) {
+                  if (
+                    t.isIdentifier(callee.property) &&
+                    extra &&
+                    extra.className
+                  ) {
+                    entry.relatedFunction = `${extra.className}.${callee.property.name}`;
+                  }
+                } else if (t.isIdentifier(callee.object)) {
                   const instanceName = callee.object.name;
                   if (variableAssignments[instanceName]) {
                     entry.relatedFunction = `${

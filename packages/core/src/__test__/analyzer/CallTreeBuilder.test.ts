@@ -11,37 +11,37 @@ describe("LinkedCallTreeBuilder with multiple files", () => {
     const sourceFile1 = `
       import { bar } from "./file2";
 
-      export function foo() {
-        return bar();
+      export const foo = async ()=>{
+        return await bar();
       }
     `;
     const sourceFile2 = `
       import { baz } from "./file3";
 
-      export function bar() {
-        return baz();
+      export async function bar() {
+        return await baz();
       }
     `;
     const sourceFile3 = `
       import { Foo } from "./file4";
-      export function baz() {
+      export async function baz() {
         const f = new Foo();
-        return f.bar();
+        return await f.bar();
       }
     `;
 
     const sourceFile4 = `
       export class Foo {
 
-        public foo() {
+        public async foo() {
           return "bar";
         }
 
-        public bar() {
+        public async bar() {
           if (true) {
             return "baz";
           }
-          return this.foo();
+          return await this.foo();
         }
       }
       `;
