@@ -37,9 +37,15 @@ class ServerlessPlugin {
       name: "My Test Project",
       description: "This is a test project",
       plugins: [OpenApiDoc],
+      pluginConfig: {
+        openApi: {
+          outputDir: "docs",
+          version: "1.0.1",
+        },
+      },
     });
   }
-  beforeDeploy() {
+  async beforeDeploy() {
     // Before deploy
 
     if (!this.builder) {
@@ -88,9 +94,7 @@ class ServerlessPlugin {
       const responses: DroktTypes.IDocsOpenApi["responses"] = {};
 
       leafDescriptions.forEach((desc, index) => {
-        // parse each leaf comment
         const parsed = parseComment<IOpenApiCommentBlockResponse>(desc);
-        // We'll just store them under 200, 201, 202, etc. as an example:
         const statusCode = Number(parsed?.statusCode || 200);
         const parsedSchemaStriing = parseSchemaString(
           parsed?.schema || "{}",
@@ -108,9 +112,7 @@ class ServerlessPlugin {
       });
     });
 
-    this.builder?.run().then(() => {
-      console.log("Docs built");
-    });
+    await this.builder.run();
 
     throw new Error("Test error");
   }

@@ -9,11 +9,14 @@ declare global {
 
     export interface Plugins {}
 
-    export type DroktConfig<T extends keyof Plugins> = {
+    export interface PluginConfig {}
+
+    export interface DroktConfig<T extends keyof Plugins> {
       name: string;
       description: string;
       plugins: (typeof DroktPlugin<T>)[];
-    };
+      pluginConfig?: PluginConfig;
+    }
 
     export type AvailablePlugins = keyof Plugins;
   }

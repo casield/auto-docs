@@ -6,31 +6,18 @@ declare global {
       method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "OPTIONS" | "HEAD";
       summary?: string;
       tags?: string[];
-      responses?: OpenApiResponse;
-    }
-
-    export interface OpenApiResponse {
-      [statusCode: string]: {
-        description: string;
-        content: {
-          [mediaType: string]: {
-            schema: {
-              type?: string;
-              properties?: Record<string, { type: string }>;
-              $ref?: string;
-              oneOf?: {
-                type?: string;
-                properties?: Record<string, { type: string }>;
-                $ref?: string;
-              }[];
-            };
-          };
-        };
-      };
+      responses?: ResponsesObject;
     }
 
     export interface Plugins {
       openApi: IDocsOpenApi;
+    }
+
+    export interface PluginConfig {
+      openApi: {
+        outputDir: string;
+        version: string;
+      };
     }
   }
 }
