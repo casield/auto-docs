@@ -1,0 +1,57 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "My Test Project",
+    "version": "1.0.1",
+    "description": "This is a test project"
+  },
+  "paths": {
+    "/": {
+      "GET": {
+        "summary": "This is a test function. The endpoint is /hello.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/MyClass.myMethod"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "superName": {
+                          "type": "string"
+                        },
+                        "superAge": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

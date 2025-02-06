@@ -109,6 +109,7 @@ class ServerlessPlugin {
         name: parsedComment?.name || result.functionName,
         version: parsedComment?.version || "1.0.0",
         responses,
+        path: result.serverlessFn.events[0].http?.path || "/",
       });
     });
 
