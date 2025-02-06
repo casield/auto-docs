@@ -23,12 +23,14 @@ export type ReturnAnalysis = {
   functions: Record<string, FunctionAnalysis>;
 };
 
-export interface AnalyzerOptions {}
+export interface AnalyzerOptions {
+  resolvePath?: (importPath: string, fileName: string) => string | null;
+}
 
 export class CodeAnalyzer {
   public importMap: Record<string, string> = {};
 
-  constructor(private fileName: string, private options: AnalyzerOptions) {}
+  constructor(public fileName: string, private options: AnalyzerOptions) {}
 
   public analyzeSource(source: string): ReturnAnalysis {
     const ast = parser.parse(source, {
@@ -248,23 +250,13 @@ export class CodeAnalyzer {
           t.isStringLiteral(path.node.arguments[0])
         ) {
           const importPath = path.node.arguments[0].value;
-          const resolvedPath =
-            importPath.startsWith("./") || importPath.startsWith("../")
-              ? pathnode
-                  .join(pathnode.dirname(this.fileName), importPath)
-                  .replace(/\\/g, "/")
-              : importPath;
+          const resolvedPath = this.resolvePath(importPath) || importPath;
           localImportMap[importPath] = resolvedPath;
         }
       },
       ImportDeclaration: (path) => {
         const source = path.node.source.value;
-        const resolvedPath =
-          source.startsWith("./") || source.startsWith("../")
-            ? pathnode
-                .join(pathnode.dirname(this.fileName), source)
-                .replace(/\\/g, "/")
-            : source;
+        const resolvedPath = this.resolvePath(source) || source;
         localImportMap[source] = resolvedPath;
         for (const specifier of path.node.specifiers) {
           if (
@@ -416,5 +408,13 @@ export class CodeAnalyzer {
 
     Object.assign(this.importMap, localImportMap);
     return { functions: functionsAnalysis };
+  }
+
+  private resolvePath(importPath: string): string | null {
+    return importPath.startsWith("./") || importPath.startsWith("../")
+      ? pathnode
+          .join(pathnode.dirname(this.fileName), importPath)
+          .replace(/\\/g, "/")
+      : this.options.resolvePath?.(importPath, this.fileName) || importPath;
   }
 }

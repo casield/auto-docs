@@ -44,9 +44,13 @@ class ServerlessPlugin {
     }
 
     const artifactDir = process.cwd();
-    const la = new LambdaFunctionAnalyzer(artifactDir, (node) => {
-      return node.final === true;
-    });
+    const la = new LambdaFunctionAnalyzer(
+      artifactDir,
+      (node) => {
+        return node.final === true;
+      },
+      "tsconfig.json"
+    );
 
     const results = this.serverless.service
       .getAllFunctions()

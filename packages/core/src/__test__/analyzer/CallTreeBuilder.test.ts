@@ -9,21 +9,21 @@ import {
 describe("LinkedCallTreeBuilder with multiple files", () => {
   it("should build a call tree using import mapping as the source of truth", () => {
     const sourceFile1 = `
-      import { bar } from "./file2";
+      import { bar } from "src/cool/file2";
 
       export const foo = async ()=>{
         return await bar();
       }
     `;
     const sourceFile2 = `
-      import { baz } from "./file3";
+      import { baz } from "../../file3";
 
       export async function bar() {
         return await baz();
       }
     `;
     const sourceFile3 = `
-      import { Foo } from "./file4";
+      import { Foo } from "./src/file4";
       export async function baz() {
         const f = new Foo();
 
@@ -46,15 +46,16 @@ describe("LinkedCallTreeBuilder with multiple files", () => {
           if (true) {
             return "baz";
           }
+
           return await this.foo();
         }
       }
       `;
 
     const analyzer1 = new CodeAnalyzer("file1.ts", {});
-    const analyzer2 = new CodeAnalyzer("file2.ts", {});
+    const analyzer2 = new CodeAnalyzer("src/cool/file2.ts", {});
     const analyzer3 = new CodeAnalyzer("file3.ts", {});
-    const analyzer4 = new CodeAnalyzer("file4.ts", {});
+    const analyzer4 = new CodeAnalyzer("src/file4.ts", {});
 
     const analysis1: ReturnAnalysis = analyzer1.analyzeSource(sourceFile1);
     const analysis2: ReturnAnalysis = analyzer2.analyzeSource(sourceFile2);
@@ -63,31 +64,89 @@ describe("LinkedCallTreeBuilder with multiple files", () => {
 
     const analysisResults: CodeAnalysisResult[] = [
       {
-        fileName: "file1.ts",
+        fileName: analyzer1.fileName,
         analysis: analysis1,
         importMap: analyzer1.importMap,
       },
       {
-        fileName: "file2.ts",
+        fileName: analyzer2.fileName,
         analysis: analysis2,
         importMap: analyzer2.importMap,
       },
       {
-        fileName: "file3.ts",
+        fileName: analyzer3.fileName,
         analysis: analysis3,
         importMap: analyzer3.importMap,
       },
       {
-        fileName: "file4.ts",
+        fileName: analyzer4.fileName,
         analysis: analysis4,
         importMap: analyzer4.importMap,
       },
     ];
 
-    const builder = new LinkedCallTreeBuilder(
-      analysisResults,
-      (node) => node.value === "baz"
-    );
+    const builder = new LinkedCallTreeBuilder(analysisResults);
+    const tree: NodeReturn = builder.buildNodeTree("foo", "file1.ts");
+    const viz = builder.visualizeTree(tree);
+    console.log(viz);
+
+    expect(tree.value).toBe("foo");
+    expect(viz).toBe(`
+ foo() [call]
+      bar() [call]
+        baz() [call]
+          Foo.foo() [call]
+            "bar" [literal]
+          Foo.bar() [call]
+            "baz" [literal]
+            Foo.foo() [call]
+              "bar" [literal]
+      `);
+  });
+
+  it.only("should resolve unknow sources", () => {
+    const sourceFile1 = `
+      import { bar } from "@/cool/file2";
+
+      export const foo = async ()=>{
+        return await bar();
+      }
+    `;
+    const sourceFile2 = `
+      export async function bar() {
+        return "baz";
+      }
+    `;
+
+    const resolvePath = (source: string, file: string) => {
+      if (source.startsWith("@")) {
+        return source.replace("@", "src");
+      }
+      return source;
+    };
+
+    const analyzer1 = new CodeAnalyzer("file1.ts", {
+      resolvePath,
+    });
+    const analyzer2 = new CodeAnalyzer("src/cool/file2.ts", { resolvePath });
+
+    const analysis1: ReturnAnalysis = analyzer1.analyzeSource(sourceFile1);
+    const analysis2: ReturnAnalysis = analyzer2.analyzeSource(sourceFile2);
+
+    const analysisResults: CodeAnalysisResult[] = [
+      {
+        fileName: analyzer1.fileName,
+        analysis: analysis1,
+        importMap: analyzer1.importMap,
+      },
+      {
+        fileName: analyzer2.fileName,
+        analysis: analysis2,
+        importMap: analyzer2.importMap,
+      },
+    ];
+
+    const builder = new LinkedCallTreeBuilder(analysisResults);
     const tree: NodeReturn = builder.buildNodeTree("foo", "file1.ts");
     const viz = builder.visualizeTree(tree);
     console.log(viz);

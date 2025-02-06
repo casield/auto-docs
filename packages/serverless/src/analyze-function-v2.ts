@@ -9,13 +9,35 @@ import {
   ReturnAnalysis,
 } from "@drokt/core";
 
+interface TsConfig {
+  compilerOptions?: {
+    baseUrl?: string;
+    paths?: { [alias: string]: string[] };
+  };
+}
+
 export class LambdaFunctionAnalyzer {
+  private tsConfig: TsConfig | null = null;
+
+  /**
+   * @param artifactName Base directory for your source files.
+   * @param isFinal A predicate to be passed to the call tree builder.
+   * @param tsConfigPath (Optional) Path to your tsconfig.json file.
+   */
   constructor(
-    // artifactName is the base directory for your source files.
     private artifactName: string,
-    // isFinal is a predicate that will be passed to the call tree builder.
-    private isFinal: (node: NodeReturn) => boolean
-  ) {}
+    private isFinal: (node: NodeReturn) => boolean,
+    private tsConfigPath?: string
+  ) {
+    if (this.tsConfigPath && fs.existsSync(this.tsConfigPath)) {
+      const configContent = fs.readFileSync(this.tsConfigPath, "utf8");
+      try {
+        this.tsConfig = JSON.parse(configContent);
+      } catch (e) {
+        console.warn("Could not parse tsconfig.json:", e);
+      }
+    }
+  }
 
   // Reads a file relative to the artifactName (base directory)
   private getFileContent(fileName: string): string | null {
@@ -42,7 +64,17 @@ export class LambdaFunctionAnalyzer {
   // If the fileName already ends with .ts or .js, check if it exists; otherwise, try candidate names.
   private resolveFile(fileName: string): string | null {
     if (fileName.endsWith(".ts") || fileName.endsWith(".js")) {
-      return this.getFileContent(fileName) ? fileName : null;
+      // Try the given file; if not found, try the alternate extension.
+      if (this.getFileContent(fileName)) {
+        return fileName;
+      }
+      if (fileName.endsWith(".ts")) {
+        const alt = fileName.slice(0, -3) + ".js";
+        return this.getFileContent(alt) ? alt : null;
+      } else {
+        const alt = fileName.slice(0, -3) + ".ts";
+        return this.getFileContent(alt) ? alt : null;
+      }
     }
     return this.getCandidateFile(fileName);
   }
@@ -138,10 +170,54 @@ export class LambdaFunctionAnalyzer {
 
     const treeBuilder = new LinkedCallTreeBuilder(
       codeAnalysisResult,
-      this.isFinal
+      this.isFinal,
+      {
+        resolveSource: this.resolveSource,
+      }
     );
     const tree = treeBuilder.buildNodeTree(entryFunction, resolvedEntryFile);
     console.log(treeBuilder.visualizeTree(tree));
     return tree;
   }
+
+  /**
+   * Custom resolveSource function that attempts to resolve unknown sources using tsconfig.json path aliases.
+   * If a tsconfig.json was provided and contains compilerOptions.paths, this function uses those aliases
+   * to transform the given function name into a file reference.
+   *
+   * It uses the tsconfig's baseUrl (resolved relative to artifactName) and paths.
+   * If no alias matches or resolution fails, it returns the original function name.
+   */
+  resolveSource = (
+    functionName: string,
+    currentFile: string
+  ): string | null => {
+    if (this.tsConfig && this.tsConfig.compilerOptions) {
+      const baseUrl = this.tsConfig.compilerOptions.baseUrl || "";
+      const pathsMapping = this.tsConfig.compilerOptions.paths || {};
+      // Resolve baseUrl relative to the artifactName.
+      const absoluteBaseUrl = path.resolve(this.artifactName, baseUrl);
+      for (const alias in pathsMapping) {
+        const targets = pathsMapping[alias];
+        // Convert alias pattern (e.g. "@alias/*") to a regex.
+        const regexPattern = "^" + alias.replace("*", "(.*)") + "$";
+        const regex = new RegExp(regexPattern);
+        const match = functionName.match(regex);
+        if (match) {
+          let target = targets[0];
+          if (target.includes("*") && match[1]) {
+            target = target.replace("*", match[1]);
+          }
+          // Resolve the target relative to the absolute baseUrl.
+          const resolvedPath = path.relative(
+            this.artifactName,
+            path.join(absoluteBaseUrl, target)
+          );
+          return resolvedPath;
+        }
+      }
+    }
+    // If no tsconfig resolution is possible, return the original source string.
+    return functionName;
+  };
 }

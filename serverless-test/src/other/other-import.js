@@ -7,6 +7,11 @@ import { mImport } from "./m-import";
  * @returns
  */
 export const otherImport = async () => {
+  if (true) {
+    const c = new MyClass();
+    return c.myMethod();
+  }
+
   // This is a comment
   return mImport();
 };

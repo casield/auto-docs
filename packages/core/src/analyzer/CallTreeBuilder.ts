@@ -1,12 +1,10 @@
 import { NodePath } from "@babel/traverse";
 import { ReturnAnalysis } from "./CodeAnalyzer";
-import pathnode from "path";
 
 export type NodeReturn = {
   type: "object" | "unknown" | "call" | "literal";
   value: string;
   relatedFunction?: string;
-  final?: boolean;
   children?: NodeReturn[];
   nodePath?: NodePath;
   description?: string;
@@ -22,10 +20,7 @@ export class LinkedCallTreeBuilder {
   private analyses: Record<string, ReturnAnalysis> = {};
   private combinedImportMap: Record<string, string> = {};
 
-  constructor(
-    analysisResults: CodeAnalysisResult[],
-    private isFinalFn: (node: NodeReturn) => boolean
-  ) {
+  constructor(analysisResults: CodeAnalysisResult[]) {
     for (const result of analysisResults) {
       // Remove any .ts or .js extension from the file name before using it as a key.
       const normalizedFileName = this.normalizeFileKey(result.fileName);
@@ -69,16 +64,6 @@ export class LinkedCallTreeBuilder {
       }
     }
     return null;
-  }
-
-  private markAllLeaves(node: NodeReturn): void {
-    if (!node.children || node.children.length === 0) {
-      node.final = true;
-    } else {
-      for (const child of node.children) {
-        this.markAllLeaves(child);
-      }
-    }
   }
 
   public buildNodeTree(
@@ -132,9 +117,7 @@ export class LinkedCallTreeBuilder {
         if (entry.relatedFunction.includes(".")) {
           const [className] = entry.relatedFunction.split(".");
           const targetRef = this.combinedImportMap[className];
-          targetFile = targetRef
-            ? targetRef // Assume targetRef is already normalized.
-            : currentFile;
+          targetFile = targetRef ? targetRef : currentFile;
         } else {
           const targetRef = this.combinedImportMap[entry.relatedFunction];
           targetFile = targetRef ? targetRef : currentFile;
@@ -172,10 +155,6 @@ export class LinkedCallTreeBuilder {
       rootNode.children = rootNode.children[0].children;
     }
 
-    if (this.isFinalFn(rootNode)) {
-      this.markAllLeaves(rootNode);
-    }
-
     return rootNode;
   }
 
@@ -192,9 +171,6 @@ export class LinkedCallTreeBuilder {
       }
     }
     let result = `${pad}${displayValue} [${node.type}]`;
-    if (node.final) {
-      result += " {FINAL}";
-    }
     if (node.description) {
       result += ` // ${node.description}`;
     }
