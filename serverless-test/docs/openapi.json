@@ -11,7 +11,7 @@
         "summary": "This is a test function. The endpoint is /hello.",
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "The description of otherImport",
             "content": {
               "application/json": {
                 "schema": {
@@ -29,7 +29,7 @@
             }
           },
           "201": {
-            "description": "OK",
+            "description": "The return response is a User object or a message.",
             "content": {
               "application/json": {
                 "schema": {
@@ -48,7 +48,24 @@
     },
     "/bye": {
       "get": {
-        "responses": {}
+        "summary": "This is a test function. The endpoint is /bye.",
+        "responses": {
+          "201": {
+            "description": "The return response is a message.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   }

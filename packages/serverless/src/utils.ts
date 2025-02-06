@@ -5,12 +5,15 @@ import { NodeReturn } from "@drokt/core";
  */
 export function collectLeafDescriptions(
   node: NodeReturn,
-  result: string[] = []
-): string[] {
+  result: { node: NodeReturn; value: string }[] = []
+) {
   // Leaf node: no children
   if (!node.children || node.children.length === 0) {
     if (node.description) {
-      result.push(node.description);
+      result.push({
+        node,
+        value: node.description,
+      });
     }
     return result;
   }

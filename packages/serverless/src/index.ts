@@ -95,11 +95,12 @@ class ServerlessPlugin {
       const responses: DroktTypes.IDocsOpenApi["responses"] = {};
 
       leafDescriptions.forEach((desc, index) => {
-        const parsed = parseComment<IOpenApiCommentBlockResponse>(desc);
+        const parsed = parseComment<IOpenApiCommentBlockResponse>(desc.value);
         const statusCode = Number(parsed?.statusCode || 200);
         const parsedSchemaStriing = parseSchemaString(
           parsed?.schema || "{}",
-          statusCode
+          statusCode,
+          desc.node
         );
         responses[statusCode] = parsedSchemaStriing[statusCode];
       });

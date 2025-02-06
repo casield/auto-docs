@@ -1,3 +1,6 @@
+import { NodeReturn, parseComment } from "@drokt/core";
+import { IOpenApiCommentBlockResponse } from "./types";
+
 /**
  * Parses a string such as:
  *   "@schema { message: string } | $User"
@@ -13,7 +16,8 @@
  */
 export function parseSchemaString(
   schemaStr: string,
-  statusCode: number
+  statusCode: number,
+  node: NodeReturn
 ): DroktTypes.ResponsesObject {
   // 1) Remove the leading "@schema " if present and trim whitespace
   const trimmed = schemaStr.replace(/^@schema\s*/, "").trim();
@@ -34,12 +38,16 @@ export function parseSchemaString(
     };
   }
 
+  const description = parseComment<IOpenApiCommentBlockResponse>(
+    node.description || ""
+  );
+
   // 5) Build and return the final response object for the given status code.
   // Note: Since statusCode keys are strings in the type, we can rely on TS converting the number.
   const responseObject: DroktTypes.ResponseObject = {
-    description: "OK",
+    description: description?.comment || "",
     content: {
-      "application/json": {
+      [description?.type || "application/json"]: {
         schema,
       },
     },
