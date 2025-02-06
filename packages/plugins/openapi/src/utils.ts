@@ -1,92 +1,112 @@
+import { NodeReturn, parseComment } from "@drokt/core";
+import { IOpenApiCommentBlockResponse } from "./types";
+
 /**
  * Parses a string such as:
  *   "@schema { message: string } | $User"
  *   "@schema { message: string }"
  *   "@schema $User"
- * and returns an OpenAPI-like response object.
+ * and returns an OpenAPI-like responses object.
+ *
+ * The returned object conforms to the `ResponsesObject` interface:
+ *
+ * export interface ResponsesObject {
+ *   [statusCode: string]: ResponseObject | ReferenceObject;
+ * }
  */
 export function parseSchemaString(
   schemaStr: string,
-  statusCode: number
-): DroktTypes.OpenApiResponse {
-  // 1) Remove the leading "@schema " if present
+  statusCode: number,
+  node: NodeReturn
+): DroktTypes.ResponsesObject {
+  // 1) Remove the leading "@schema " if present and trim whitespace
   const trimmed = schemaStr.replace(/^@schema\s*/, "").trim();
 
   // 2) Split on "|" to see if we have multiple variants
   const variants = trimmed.split("|").map((v) => v.trim());
 
-  // 3) Parse each variant into an object or a reference
+  // 3) Parse each variant into an inline schema object or a reference object
   const parsedVariants = variants.map(parseVariant);
 
-  // 4) If we have only one variant, return a single schema (no "oneOf")
-  let schema: DroktTypes.OpenApiResponse["200"]["content"]["application/json"]["schema"];
+  // 4) If only one variant is provided, use it directly; otherwise use "oneOf"
+  let schema: DroktTypes.SchemaObject | DroktTypes.ReferenceObject;
   if (parsedVariants.length === 1) {
     schema = parsedVariants[0];
   } else {
-    // If multiple variants, combine them via "oneOf"
     schema = {
       oneOf: parsedVariants,
     };
   }
 
-  // 5) Return the final shape (for status code 200, content type application/json)
-  return {
-    [statusCode]: {
-      description: "OK",
-      content: {
-        "application/json": {
-          schema,
-        },
+  const description = parseComment<IOpenApiCommentBlockResponse>(
+    node.description || ""
+  );
+
+  // 5) Build and return the final response object for the given status code.
+  // Note: Since statusCode keys are strings in the type, we can rely on TS converting the number.
+  const responseObject: DroktTypes.ResponseObject = {
+    description: description?.comment || "",
+    content: {
+      [description?.type || "application/json"]: {
+        schema,
       },
     },
+  };
+
+  return {
+    [statusCode]: responseObject,
   };
 }
 
 /**
- * Helper function to parse a single variant, which could be:
- *   - An inline object: "{ message: string, ... }"
- *   - A reference to a component schema (indicated by "$" prefix): "$User"
+ * Helper function to parse a single variant.
+ * Variants can be:
+ *   - An inline object: "{ message: string, count: number }"
+ *   - A reference to a component schema (indicated by a "$" prefix): "$User"
  */
-function parseVariant(variant: string) {
-  // If starts with '{', treat as inline object
+function parseVariant(
+  variant: string
+): DroktTypes.SchemaObject | DroktTypes.ReferenceObject {
+  // If the variant starts with '{', assume it's an inline object definition.
   if (variant.startsWith("{")) {
     return parseInlineObject(variant);
   }
 
-  // If starts with '$', treat as a reference to a component schema
+  // If the variant starts with '$', treat it as a reference.
   if (variant.startsWith("$")) {
-    const refName = variant.slice(1); // remove '$'
+    const refName = variant.slice(1).trim(); // Remove the '$' prefix and trim
     return {
       $ref: `#/components/schemas/${refName}`,
     };
   }
 
-  // If we want to be strict, throw an error. Or handle it as you see fit:
+  // If the variant does not match either format, throw an error.
   throw new Error(
     `Invalid variant "${variant}". Must start with "{" for inline object or "$" for reference.`
   );
 }
 
 /**
- * Parse an inline object string like:
+ * Parses an inline object string like:
  *   "{ message: string, count: number }"
- * and convert it to a simple "type: object" with properties { ... }.
+ * and converts it into a SchemaObject with a type of "object" and corresponding properties.
+ *
+ * NOTE: This is a simplistic parser and will not handle nested objects or more complex types.
  */
-function parseInlineObject(objStr: string) {
-  // Remove outer braces
+function parseInlineObject(objStr: string): DroktTypes.SchemaObject {
+  // Remove the outer braces
   const content = objStr
     .replace(/^\{\s*/, "")
     .replace(/\s*\}$/, "")
     .trim();
 
-  // Split on commas to get each "key: type" pair
-  // NOTE: This is a simplistic approach. It won't handle nested braces, etc.
+  // Split on commas to separate each "key: type" pair
   const pairs = content.split(",").map((p) => p.trim());
 
   const properties: Record<string, { type: string }> = {};
 
   for (const pair of pairs) {
-    // Expecting "key: type"
+    // Expecting each pair to be in the form "key: type"
     const [key, value] = pair.split(":").map((s) => s.trim());
     if (!key || !value) {
       throw new Error(`Invalid property definition: "${pair}"`);

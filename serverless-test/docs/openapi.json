@@ -1,0 +1,81 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "My Test Project",
+    "version": "1.0.1",
+    "description": "This is a test project"
+  },
+  "components": {
+    "schemas": {
+      "User": {
+        "title": "User",
+        "description": "A user object",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "age": {
+            "type": "number"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/hello": {
+      "get": {
+        "summary": "This is a test function. The endpoint is /hello.",
+        "responses": {
+          "201": {
+            "description": "The return response is a User object or a message.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The description of otherImport",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bye": {
+      "get": {
+        "summary": "This is a test function. The endpoint is /bye.",
+        "responses": {
+          "201": {
+            "description": "The return response is a message.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

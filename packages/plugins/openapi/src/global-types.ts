@@ -3,34 +3,24 @@ import "@drokt/core";
 declare global {
   export namespace DroktTypes {
     export interface IDocsOpenApi extends IDocs {
-      method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "OPTIONS" | "HEAD";
+      method: "get" | "post" | "put" | "delete" | "patch" | "options" | "head";
       summary?: string;
+      description?: string;
       tags?: string[];
-      responses?: OpenApiResponse;
-    }
-
-    export interface OpenApiResponse {
-      [statusCode: string]: {
-        description: string;
-        content: {
-          [mediaType: string]: {
-            schema: {
-              type?: string;
-              properties?: Record<string, { type: string }>;
-              $ref?: string;
-              oneOf?: {
-                type?: string;
-                properties?: Record<string, { type: string }>;
-                $ref?: string;
-              }[];
-            };
-          };
-        };
-      };
+      responses?: ResponsesObject;
+      path: string;
     }
 
     export interface Plugins {
       openApi: IDocsOpenApi;
+    }
+
+    export interface PluginConfig {
+      openApi: {
+        outputDir: string;
+        version: string;
+        schemas?: { [schema: string]: SchemaObject };
+      };
     }
   }
 }

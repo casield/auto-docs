@@ -6,7 +6,7 @@ export * from "./analyzer";
 export * from "./utils";
 
 export class LambdaDocsBuilder<T extends DroktTypes.AvailablePlugins> {
-  private config: DroktTypes.DroktConfig<T>;
+  public config: DroktTypes.DroktConfig<T>;
   private _docs: Map<T, DroktTypes.Plugins[T][]> = new Map();
 
   private plugins: DroktPlugin<T>[] = [];

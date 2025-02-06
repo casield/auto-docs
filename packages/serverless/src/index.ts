@@ -37,9 +37,30 @@ class ServerlessPlugin {
       name: "My Test Project",
       description: "This is a test project",
       plugins: [OpenApiDoc],
+      pluginConfig: {
+        openApi: {
+          outputDir: "docs",
+          version: "1.0.1",
+          schemas: {
+            User: {
+              title: "User",
+              description: "A user object",
+              type: "object",
+              properties: {
+                name: {
+                  type: "string",
+                },
+                age: {
+                  type: "number",
+                },
+              },
+            },
+          },
+        },
+      },
     });
   }
-  beforeDeploy() {
+  async beforeDeploy() {
     // Before deploy
 
     if (!this.builder) {
@@ -77,8 +98,8 @@ class ServerlessPlugin {
       .filter((result) => result !== null);
 
     results.forEach((result) => {
-      const method = result.serverlessFn.events[0].http
-        ?.method as DroktTypes.IDocsOpenApi["method"];
+      const method =
+        result.serverlessFn.events[0].http?.method.toLowerCase() as DroktTypes.IDocsOpenApi["method"];
       const parsedComment = parseComment<IOpenApiCommentBlockPath>(
         result.analisys.description || ""
       );
@@ -88,32 +109,49 @@ class ServerlessPlugin {
       const responses: DroktTypes.IDocsOpenApi["responses"] = {};
 
       leafDescriptions.forEach((desc, index) => {
-        // parse each leaf comment
-        const parsed = parseComment<IOpenApiCommentBlockResponse>(desc);
-        // We'll just store them under 200, 201, 202, etc. as an example:
+        const parsed = parseComment<IOpenApiCommentBlockResponse>(desc.value);
         const statusCode = Number(parsed?.statusCode || 200);
         const parsedSchemaStriing = parseSchemaString(
           parsed?.schema || "{}",
-          statusCode
+          statusCode,
+          desc.node
         );
         responses[statusCode] = parsedSchemaStriing[statusCode];
       });
 
       this.builder?.docs("openApi", {
         summary: parsedComment?.comment,
-        method: method || "GET",
+        method: method || "get",
         name: parsedComment?.name || result.functionName,
         version: parsedComment?.version || "1.0.0",
         responses,
+        path: this.getApiGatewayEvents(result.serverlessFn)[0]?.path || "/",
       });
     });
 
-    this.builder?.run().then(() => {
-      console.log("Docs built");
-    });
+    await this.builder.run();
 
     throw new Error("Test error");
   }
+
+  getApiGatewayEvents(
+    fn:
+      | Serverless.FunctionDefinitionHandler
+      | Serverless.FunctionDefinitionImage
+  ) {
+    return (
+      fn.events
+        ?.filter((event) => event.http || event.httpApi)
+        .map((event) => {
+          if (event.http) {
+            return event.http;
+          }
+
+          return event.httpApi;
+        }) || []
+    );
+  }
+
   afterDeploy() {
     // After deploy
   }
