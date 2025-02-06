@@ -9,7 +9,7 @@
     "build": "tsc",
     "dev": "npx serverless dev",
     "deploy": "npx serverless deploy",
-    "deploy:dev": "cd ../packages/serverless && npm run build && cd ../../serverless-test && npx serverless deploy"
+    "deploy:dev": "cd .. && npm run build && cd ./serverless-test && npx serverless deploy"
   },
   "author": "",
   "license": "ISC",
