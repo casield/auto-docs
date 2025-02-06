@@ -1,5 +1,3 @@
-import { response } from "@drokt/serverless";
-
 /**
  * My Description
  *
@@ -18,14 +16,17 @@ class MyClass {
   }
 
   async myMethod() {
-    const my = response(
-      200,
-      {},
-      {
-        schema: "body",
-      }
-    );
-
+    const my = {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: "MyClass.MyMethod!",
+      }),
+    };
+    /**
+     * @auto-docs
+     * The description of otherImport
+     * @schema $MyClass.myMethod
+     */
     return my;
   }
 }

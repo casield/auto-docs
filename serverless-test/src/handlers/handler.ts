@@ -12,7 +12,8 @@ export const hello = async (event: any) => {
 
   /* @auto-docs
    * The return response is a User object or a message.
-   * @schema { message: string } | User
+   * @statusCode 201
+   * @schema { message: string }
    */
   return {
     message: "Go Serverless v1.0! Your function executed successfully!",

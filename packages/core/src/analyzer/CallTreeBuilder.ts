@@ -94,7 +94,7 @@ export class LinkedCallTreeBuilder {
       type: "call",
       value: functionName,
       children: [],
-      description: fnAnalysis.comment,
+      description: fnAnalysis.comment, // attach the function analysis comment
     };
 
     const seen = new Set<string>();
@@ -106,11 +106,13 @@ export class LinkedCallTreeBuilder {
         if (seen.has(dedupKey)) continue;
         seen.add(dedupKey);
 
+        // Propagate the entry.comment into the node's description.
         const node: NodeReturn = {
           type: "call",
           value: displayName,
           relatedFunction: entry.relatedFunction,
           nodePath: entry.nodePath,
+          description: entry.comment,
         };
 
         let targetFile = currentFile;
@@ -138,10 +140,12 @@ export class LinkedCallTreeBuilder {
         const dedupKey = `noncall:${entry.value}`;
         if (seen.has(dedupKey)) continue;
         seen.add(dedupKey);
+        // For non-call entries, also propagate the comment.
         const node: NodeReturn = {
           type: entry.type,
           value: entry.value,
           nodePath: entry.nodePath,
+          description: entry.comment,
         };
         rootNode.children!.push(node);
       }

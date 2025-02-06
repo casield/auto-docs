@@ -103,6 +103,29 @@ export class CodeAnalyzer {
       });
     };
 
+    // Helper to try different ways of getting comments attached to a node.
+    const getAttachedComments = (path: NodePath): string | undefined => {
+      let comments = path.node.leadingComments;
+      // If no leading comments, try parent's leading comments.
+      if (!comments && path.parentPath?.node.leadingComments) {
+        comments = path.parentPath.node.leadingComments;
+      }
+      // If still not found, try the previous sibling's trailing comments.
+      if (!comments) {
+        const prevSiblings = path.getAllPrevSiblings();
+        if (prevSiblings && prevSiblings.length > 0) {
+          const lastSibling = prevSiblings[prevSiblings.length - 1];
+          if (lastSibling.node.trailingComments) {
+            comments = lastSibling.node.trailingComments;
+          }
+        }
+      }
+      if (comments) {
+        return comments.map((c) => c.value.trim()).join("\n");
+      }
+      return undefined;
+    };
+
     const collectReturnStatements = (
       path: NodePath,
       funcName: string,
@@ -120,10 +143,11 @@ export class CodeAnalyzer {
             ...extra,
           };
 
-          if (returnPath.node.leadingComments) {
-            entry.comment = returnPath.node.leadingComments
-              .map((c) => c.value.trim())
-              .join("\n");
+          // Instead of just checking for leadingComments on the return node,
+          // try to get comments attached via our helper.
+          const commentText = getAttachedComments(returnPath);
+          if (commentText) {
+            entry.comment = commentText;
           }
 
           if (t.isIdentifier(returnPath.node.argument)) {
@@ -303,7 +327,11 @@ export class CodeAnalyzer {
                     .map((c) => c.value.trim())
                     .join("\n");
                 }
-                if (!commentText && exportPath.node.leadingComments) {
+                if (
+                  !commentText &&
+                  exportPath.node.leadingComments &&
+                  exportPath.node.leadingComments.length
+                ) {
                   commentText = exportPath.node.leadingComments
                     .map((c) => c.value.trim())
                     .join("\n");

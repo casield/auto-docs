@@ -1,7 +1,13 @@
 import Serverless from "serverless";
-import { IOpenApiCommentBlockPath, OpenApiDoc } from "@drokt/openapi-plugin";
+import {
+  IOpenApiCommentBlockPath,
+  OpenApiDoc,
+  IOpenApiCommentBlockResponse,
+  parseSchemaString,
+} from "@drokt/openapi-plugin";
 import { LambdaDocsBuilder, parseComment } from "@drokt/core";
 import { LambdaFunctionAnalyzer } from "./analyze-function-v2";
+import { collectLeafDescriptions } from "./utils";
 
 export type * from "./analyze-function-v2";
 
@@ -76,11 +82,29 @@ class ServerlessPlugin {
       const parsedComment = parseComment<IOpenApiCommentBlockPath>(
         result.analisys.description || ""
       );
+
+      const leafDescriptions = collectLeafDescriptions(result.analisys);
+
+      const responses: DroktTypes.IDocsOpenApi["responses"] = {};
+
+      leafDescriptions.forEach((desc, index) => {
+        // parse each leaf comment
+        const parsed = parseComment<IOpenApiCommentBlockResponse>(desc);
+        // We'll just store them under 200, 201, 202, etc. as an example:
+        const statusCode = Number(parsed?.statusCode || 200);
+        const parsedSchemaStriing = parseSchemaString(
+          parsed?.schema || "{}",
+          statusCode
+        );
+        responses[statusCode] = parsedSchemaStriing[statusCode];
+      });
+
       this.builder?.docs("openApi", {
         summary: parsedComment?.comment,
         method: method || "GET",
         name: parsedComment?.name || result.functionName,
         version: parsedComment?.version || "1.0.0",
+        responses,
       });
     });
 
