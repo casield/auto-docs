@@ -26,6 +26,7 @@ class MyClass {
      * @auto-docs
      * The description of otherImport
      * @schema $User
+     * @statusCode 400
      */
     return my;
   }

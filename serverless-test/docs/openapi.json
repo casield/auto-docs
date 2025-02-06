@@ -27,16 +27,6 @@
       "get": {
         "summary": "This is a test function. The endpoint is /hello.",
         "responses": {
-          "200": {
-            "description": "The description of otherImport",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/User"
-                }
-              }
-            }
-          },
           "201": {
             "description": "The return response is a User object or a message.",
             "content": {
@@ -48,6 +38,16 @@
                       "type": "string"
                     }
                   }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The description of otherImport",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
                 }
               }
             }

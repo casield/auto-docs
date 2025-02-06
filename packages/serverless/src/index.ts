@@ -8,7 +8,6 @@ import {
 import { LambdaDocsBuilder, parseComment } from "@drokt/core";
 import { LambdaFunctionAnalyzer } from "./analyze-function-v2";
 import { collectLeafDescriptions } from "./utils";
-import Aws from "serverless/plugins/aws/provider/awsProvider";
 
 export type * from "./analyze-function-v2";
 
