@@ -19,13 +19,13 @@ class MyClass {
     const my = {
       statusCode: 200,
       body: JSON.stringify({
-        message: "MyClass.MyMethod!",
+        userId: "123",
       }),
     };
     /**
      * @auto-docs
      * The description of otherImport
-     * @schema { superName:string, superAge:number }
+     * @schema $User
      */
     return my;
   }

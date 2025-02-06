@@ -22,6 +22,9 @@ export class OpenApiDoc extends DroktPlugin<"openApi"> {
         version: builder.config.pluginConfig?.openApi.version || "1.0.0",
         description: builder.config.description,
       },
+      components: {
+        schemas: builder.config.pluginConfig?.openApi.schemas || {},
+      },
       paths: docs.reduce((acc, doc) => {
         acc[doc.path] = {
           [doc.method]: {

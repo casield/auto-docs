@@ -42,6 +42,21 @@ class ServerlessPlugin {
         openApi: {
           outputDir: "docs",
           version: "1.0.1",
+          schemas: {
+            User: {
+              title: "User",
+              description: "A user object",
+              type: "object",
+              properties: {
+                name: {
+                  type: "string",
+                },
+                age: {
+                  type: "number",
+                },
+              },
+            },
+          },
         },
       },
     });

@@ -29,7 +29,7 @@ export function parseSchemaString(
   const parsedVariants = variants.map(parseVariant);
 
   // 4) If only one variant is provided, use it directly; otherwise use "oneOf"
-  let schema: DroktTypes.SchemaObject;
+  let schema: DroktTypes.SchemaObject | DroktTypes.ReferenceObject;
   if (parsedVariants.length === 1) {
     schema = parsedVariants[0];
   } else {
@@ -64,7 +64,9 @@ export function parseSchemaString(
  *   - An inline object: "{ message: string, count: number }"
  *   - A reference to a component schema (indicated by a "$" prefix): "$User"
  */
-function parseVariant(variant: string): DroktTypes.SchemaObject {
+function parseVariant(
+  variant: string
+): DroktTypes.SchemaObject | DroktTypes.ReferenceObject {
   // If the variant starts with '{', assume it's an inline object definition.
   if (variant.startsWith("{")) {
     return parseInlineObject(variant);

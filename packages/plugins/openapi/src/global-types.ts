@@ -19,6 +19,7 @@ declare global {
       openApi: {
         outputDir: string;
         version: string;
+        schemas?: { [schema: string]: SchemaObject };
       };
     }
   }

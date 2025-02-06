@@ -210,7 +210,6 @@ declare global {
       externalDocs?: ExternalDocumentationObject;
       example?: any;
       deprecated?: boolean;
-      $ref?: string;
     }
 
     export interface DiscriminatorObject {
