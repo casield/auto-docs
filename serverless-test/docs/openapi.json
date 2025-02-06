@@ -6,8 +6,8 @@
     "description": "This is a test project"
   },
   "paths": {
-    "/": {
-      "GET": {
+    "/hello": {
+      "get": {
         "summary": "This is a test function. The endpoint is /hello.",
         "responses": {
           "200": {
@@ -15,22 +15,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/MyClass.myMethod"
+                  "type": "object",
+                  "properties": {
+                    "superName": {
+                      "type": "string"
                     },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "superName": {
-                          "type": "string"
-                        },
-                        "superAge": {
-                          "type": "number"
-                        }
-                      }
+                    "superAge": {
+                      "type": "number"
                     }
-                  ]
+                  }
                 }
               }
             }
@@ -51,6 +44,11 @@
             }
           }
         }
+      }
+    },
+    "/bye": {
+      "get": {
+        "responses": {}
       }
     }
   }

@@ -25,7 +25,7 @@ class MyClass {
     /**
      * @auto-docs
      * The description of otherImport
-     * @schema $MyClass.myMethod | { superName:string, superAge:number }
+     * @schema { superName:string, superAge:number }
      */
     return my;
   }

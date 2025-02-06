@@ -3,7 +3,7 @@ import "@drokt/core";
 declare global {
   export namespace DroktTypes {
     export interface IDocsOpenApi extends IDocs {
-      method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "OPTIONS" | "HEAD";
+      method: "get" | "post" | "put" | "delete" | "patch" | "options" | "head";
       summary?: string;
       description?: string;
       tags?: string[];

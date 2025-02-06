@@ -14,8 +14,15 @@ functions:
     handler: src/handlers/handler.hello
     events:
       - httpApi:
-          path: /
+          path: /hello
           method: get
+
+  bye:
+    handler: src/handlers/handler.bye
+    events:
+      - httpApi:
+          path: /bye
+          method: post
 
 plugins:
   - "../packages/serverless/dist/index.js"

@@ -8,6 +8,7 @@ import {
 import { LambdaDocsBuilder, parseComment } from "@drokt/core";
 import { LambdaFunctionAnalyzer } from "./analyze-function-v2";
 import { collectLeafDescriptions } from "./utils";
+import Aws from "serverless/plugins/aws/provider/awsProvider";
 
 export type * from "./analyze-function-v2";
 
@@ -83,8 +84,8 @@ class ServerlessPlugin {
       .filter((result) => result !== null);
 
     results.forEach((result) => {
-      const method = result.serverlessFn.events[0].http
-        ?.method as DroktTypes.IDocsOpenApi["method"];
+      const method =
+        result.serverlessFn.events[0].http?.method.toLowerCase() as DroktTypes.IDocsOpenApi["method"];
       const parsedComment = parseComment<IOpenApiCommentBlockPath>(
         result.analisys.description || ""
       );
@@ -105,11 +106,11 @@ class ServerlessPlugin {
 
       this.builder?.docs("openApi", {
         summary: parsedComment?.comment,
-        method: method || "GET",
+        method: method || "get",
         name: parsedComment?.name || result.functionName,
         version: parsedComment?.version || "1.0.0",
         responses,
-        path: result.serverlessFn.events[0].http?.path || "/",
+        path: this.getApiGatewayEvents(result.serverlessFn)[0]?.path || "/",
       });
     });
 
@@ -117,6 +118,25 @@ class ServerlessPlugin {
 
     throw new Error("Test error");
   }
+
+  getApiGatewayEvents(
+    fn:
+      | Serverless.FunctionDefinitionHandler
+      | Serverless.FunctionDefinitionImage
+  ) {
+    return (
+      fn.events
+        ?.filter((event) => event.http || event.httpApi)
+        .map((event) => {
+          if (event.http) {
+            return event.http;
+          }
+
+          return event.httpApi;
+        }) || []
+    );
+  }
+
   afterDeploy() {
     // After deploy
   }
