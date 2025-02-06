@@ -1,7 +1,9 @@
 import { otherImport } from "@/other/other-import";
-import { response } from "@drokt/serverless";
 /**
- * This is the /hello endpoint.
+ * @auto-docs
+ * This is a test function. The endpoint is /hello.
+ * @name Hello Endpoint
+ * @version 1.1.2
  */
 export const hello = async (event: any) => {
   if (event.queryStringParameters && event.queryStringParameters.other) {
@@ -12,7 +14,7 @@ export const hello = async (event: any) => {
    * The return response is a User object or a message.
    * @schema { message: string } | User
    */
-  return response(200, {
+  return {
     message: "Go Serverless v1.0! Your function executed successfully!",
-  });
+  };
 };

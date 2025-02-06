@@ -1,18 +1,17 @@
 /**
- * Parses a block comment containing "@auto-docs" and returns a structured object.
- *
- * @param commentBlock The entire comment text, including /* and *\/
- * @returns An object with `comment` plus any `@tag` properties
+ * Parses a block comment containing "@auto-docs" and returns a structured object
+ * that *always* includes a `comment` property, plus any `@tag` properties.
  */
-export function parseComment(commentBlock: string): Record<string, string> {
+export function parseComment<T = {}>(
+  commentBlock: string
+): (T & { comment: string }) | undefined {
   const prefix = "@auto-docs";
 
-  // 1. Remove the /*, */ and any leading asterisks.
-  //    This way we can iterate line by line cleanly.
+  // 1. Remove /*, */ and leading asterisks:
   let cleaned = commentBlock
     // Remove starting /* and ending */
     .replace(/^\/\*+/, "")
-    .replace(/\*+\/$/, "")
+    .replace(/\*+\//, "")
     // For each line, remove leading '*' or whitespace
     .split("\n")
     .map((line) => line.replace(/^\s*\*?\s?/, "").trim())
@@ -21,8 +20,7 @@ export function parseComment(commentBlock: string): Record<string, string> {
   // 2. Split into lines
   const lines = cleaned.split("\n");
 
-  // 3. Find if there's a line that contains "@auto-docs".
-  //    We only process lines *after* we see "@auto-docs".
+  // 3. Find "@auto-docs"
   let autoDocsIndex = -1;
   for (let i = 0; i < lines.length; i++) {
     if (lines[i].includes(prefix)) {
@@ -31,47 +29,39 @@ export function parseComment(commentBlock: string): Record<string, string> {
     }
   }
 
-  // If there's no "@auto-docs" in the comment, return an empty object or handle differently as needed.
+  // If there's no "@auto-docs", return undefined
   if (autoDocsIndex === -1) {
-    return {};
+    return undefined;
   }
 
-  // 4. We'll parse lines after @auto-docs into an output object.
+  // 4. We'll parse lines after "@auto-docs"
   const result: Record<string, string> = {
     comment: "",
   };
 
-  // 5. Iterate from the line *after* @auto-docs to the end of the comment.
+  // 5. Iterate from the line *after* @auto-docs to the end
   for (let i = autoDocsIndex + 1; i < lines.length; i++) {
     const line = lines[i].trim();
 
-    // If it's empty, skip.
+    // Skip empty lines
     if (!line) continue;
 
-    // If it starts with '@', parse the next token as a tag.
-    // e.g., "@schema { message: string } | User"
-    // -> key = 'schema', value = '{ message: string } | User'
+    // If it starts with '@', parse a tag
     if (line.startsWith("@")) {
       const spaceIndex = line.indexOf(" ");
       if (spaceIndex > 0) {
-        // e.g., '@schema { message: string } | User'
-        // keyPart = '@schema', valuePart = '{ message: string } | User'
-        const keyPart = line.slice(0, spaceIndex); // '@schema'
-        const valuePart = line.slice(spaceIndex).trim(); // '{ message: string } | User'
-
-        // Remove leading '@'
-        const key = keyPart.replace(/^@/, ""); // 'schema'
+        const keyPart = line.slice(0, spaceIndex); // e.g. "@schema"
+        const valuePart = line.slice(spaceIndex).trim(); // e.g. "{ message: string } | User"
+        const key = keyPart.replace(/^@/, ""); // e.g. "schema"
         result[key] = valuePart;
       } else {
-        // If there's a line like "@schema" with no trailing text, store empty value
+        // If the line is just "@something", store empty string
         const key = line.replace(/^@/, "");
         result[key] = "";
       }
     } else {
-      // Otherwise, it's just comment text. Append to `result.comment`.
-      // You can also add line breaks if you prefer, or store them as an array, etc.
+      // Otherwise, it's just comment text appended to 'comment'
       if (result.comment) {
-        // if there's already some comment text, add a space or newline
         result.comment += "\n" + line;
       } else {
         result.comment = line;
@@ -79,5 +69,7 @@ export function parseComment(commentBlock: string): Record<string, string> {
     }
   }
 
-  return result;
+  // 6. Return as T & { comment: string }
+  //    Ensures `comment` property is always present
+  return result as T & { comment: string };
 }
