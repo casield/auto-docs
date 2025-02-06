@@ -21,14 +21,9 @@ export class LambdaFunctionAnalyzer {
 
   /**
    * @param artifactName Base directory for your source files.
-   * @param isFinal A predicate to be passed to the call tree builder.
    * @param tsConfigPath (Optional) Path to your tsconfig.json file.
    */
-  constructor(
-    private artifactName: string,
-    private isFinal: (node: NodeReturn) => boolean,
-    private tsConfigPath?: string
-  ) {
+  constructor(private artifactName: string, private tsConfigPath?: string) {
     if (this.tsConfigPath && fs.existsSync(this.tsConfigPath)) {
       const configContent = fs.readFileSync(this.tsConfigPath, "utf8");
       try {
@@ -135,9 +130,12 @@ export class LambdaFunctionAnalyzer {
         for (const ret of funcAnalysis.returnStatements) {
           if (ret.type === "call" && ret.relatedFunction) {
             let candidateFile: string | null = null;
-            // If the analyzer provided an importSource, try resolving that first.
+            // If the analyzer provided an importSource, try resolving it using tsconfig path aliases.
             if (ret.importSource) {
-              candidateFile = this.resolveFile(ret.importSource);
+              // Use resolveSource to account for path aliases before resolving the file.
+              candidateFile = this.resolveFile(
+                this.resolveSource(ret.importSource, file)
+              );
             }
             // Otherwise, try the candidate file based on the related function name.
             if (!candidateFile) {
@@ -158,7 +156,9 @@ export class LambdaFunctionAnalyzer {
     const codeAnalysisResult = Object.entries(analyzedFiles).map(
       ([fileName, analysis]) => {
         // Re-run the analyzer to get the importMap for each file.
-        const analyzer = new CodeAnalyzer(fileName, {} as AnalyzerOptions);
+        const analyzer = new CodeAnalyzer(fileName, {
+          resolvePath: this.resolveSource,
+        } as AnalyzerOptions);
         analyzer.analyzeSource(this.getFileContent(fileName) || "");
         return {
           fileName,
@@ -168,13 +168,7 @@ export class LambdaFunctionAnalyzer {
       }
     );
 
-    const treeBuilder = new LinkedCallTreeBuilder(
-      codeAnalysisResult,
-      this.isFinal,
-      {
-        resolveSource: this.resolveSource,
-      }
-    );
+    const treeBuilder = new LinkedCallTreeBuilder(codeAnalysisResult);
     const tree = treeBuilder.buildNodeTree(entryFunction, resolvedEntryFile);
     console.log(treeBuilder.visualizeTree(tree));
     return tree;
@@ -188,10 +182,7 @@ export class LambdaFunctionAnalyzer {
    * It uses the tsconfig's baseUrl (resolved relative to artifactName) and paths.
    * If no alias matches or resolution fails, it returns the original function name.
    */
-  resolveSource = (
-    functionName: string,
-    currentFile: string
-  ): string | null => {
+  resolveSource = (functionName: string, currentFile: string): string => {
     if (this.tsConfig && this.tsConfig.compilerOptions) {
       const baseUrl = this.tsConfig.compilerOptions.baseUrl || "";
       const pathsMapping = this.tsConfig.compilerOptions.paths || {};
