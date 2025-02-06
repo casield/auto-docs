@@ -2,9 +2,6 @@ import Serverless from "serverless";
 import { OpenApiDoc } from "@drokt/openapi-plugin";
 import { LambdaDocsBuilder } from "@drokt/core";
 import { LambdaFunctionAnalyzer } from "./analyze-function-v2";
-import { recreateDocs } from "./recreate-docs";
-
-export * from "./response";
 
 export type * from "./analyze-function-v2";
 

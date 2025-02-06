@@ -1,5 +1,4 @@
 import { response } from "@drokt/serverless";
-import { mImport } from "./m-import";
 
 /**
  * My Description
@@ -11,9 +10,6 @@ export const otherImport = async () => {
     const c = new MyClass();
     return c.myMethod();
   }
-
-  // This is a comment
-  return mImport();
 };
 
 class MyClass {
