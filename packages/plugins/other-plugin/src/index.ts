@@ -1,14 +1,13 @@
-import { DroktPlugin } from "@drokt/core/src/Plugin";
+import { DroktPlugin, LambdaDocsBuilder } from "@drokt/core";
 import "./global-types";
-import { PluginBuilder } from "@drokt/core/src";
 
 export class OtherApiDoc extends DroktPlugin<"other"> {
   constructor() {
     super("other");
   }
 
-  public onBuild(
+  onBuild(
     docs: DroktTypes.IOtherApi[],
-    builder: PluginBuilder<DroktTypes.AvailablePlugins>
+    builder: LambdaDocsBuilder<DroktTypes.AvailablePlugins>
   ): void {}
 }

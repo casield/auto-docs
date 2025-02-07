@@ -36,7 +36,9 @@ export class LambdaDocsBuilder<T extends DroktTypes.AvailablePlugins> {
       if (handlersFilter) {
         plugin.onBuild(handlersFilter, this);
       } else {
-        console.warn(`No docs found for plugin ${plugin.type}. Skipping...`);
+        throw new Error(
+          `No handlers found for plugin ${plugin.type}. Did you forget to call docs() or add it to your plugins?`
+        );
       }
     });
 
