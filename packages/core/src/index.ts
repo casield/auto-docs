@@ -13,6 +13,7 @@ export class LambdaDocsBuilder<T extends DroktTypes.AvailablePlugins> {
 
   constructor(config: DroktTypes.DroktConfig<T>) {
     this.config = config;
+    this.initPlugins();
   }
 
   private initPlugins(): void {
@@ -28,8 +29,6 @@ export class LambdaDocsBuilder<T extends DroktTypes.AvailablePlugins> {
   }
 
   public async run() {
-    this.initPlugins();
-
     this.plugins.forEach((plugin) => {
       const handlersFilter = this._docs.get(plugin.type);
 
