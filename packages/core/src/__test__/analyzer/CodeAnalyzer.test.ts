@@ -3,13 +3,13 @@ import {
   AnalyzerOptions,
   ReturnAnalysis,
 } from "../../analyzer/CodeAnalyzer";
+import { parseComment } from "../../utils";
 
 describe("CodeAnalyzer", () => {
   const options: AnalyzerOptions = {};
 
   it("should analyze source code and return correct return statements and class methods", () => {
     const sourceCode = `
-    
     import { myFunction } from "../../final-framework/main.ts";
 
     /**
@@ -40,6 +40,10 @@ describe("CodeAnalyzer", () => {
     const analysis: ReturnAnalysis = analyzer.analyzeSource(sourceCode);
 
     expect(analysis).toBeDefined();
+    expect(analysis.functions.testFunction.returnStatements.length).toBe(1);
+    expect(analysis.functions.testFunction.returnStatements[0].value).toBe(
+      "myFunction()"
+    );
   });
 
   it("should get the return comments", () => {
@@ -47,8 +51,8 @@ describe("CodeAnalyzer", () => {
     import { myFunction } from "../../final-framework/main.ts";
 
     /**
+     * @auto-docs
      * Hello this is a comment
-     * @returns {string}
      */
     export const testFunction = () => {
       // This is a comment
@@ -63,10 +67,10 @@ describe("CodeAnalyzer", () => {
     const analysis: ReturnAnalysis = analyzer.analyzeSource(sourceCode);
 
     expect(analysis.functions.testFunction.returnStatements[0].comment).toBe(
-      "Hello this is a comment"
-    );
-    expect(analysis.functions.TestClass.returnStatements[0].comment).toBe(
       "This is a comment"
     );
+
+    const comment = parseComment(analysis.functions.testFunction.comment || "");
+    expect(comment?.comment).toBe("Hello this is a comment");
   });
 });

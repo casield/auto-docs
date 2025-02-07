@@ -34,10 +34,6 @@ export class LambdaDocsBuilder<T extends DroktTypes.AvailablePlugins> {
 
       if (handlersFilter) {
         plugin.onBuild(handlersFilter, this);
-      } else {
-        throw new Error(
-          `No handlers found for plugin ${plugin.type}. Did you forget to call docs() or add it to your plugins?`
-        );
       }
     });
 
@@ -50,6 +46,14 @@ export class LambdaDocsBuilder<T extends DroktTypes.AvailablePlugins> {
     type: T,
     docs: DroktTypes.Plugins[T]
   ) {
+    if (
+      !this.plugins.some(
+        (plugin) => (plugin.type as DroktTypes.AvailablePlugins) === type
+      )
+    ) {
+      throw new Error(`Plugin ${type} not found`);
+    }
+
     if (!this._docs.has(type)) {
       this._docs.set(type, []);
     }

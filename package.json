@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test:serverless": "jest --selectProjects=serverless",
+    "test:core": "jest --selectProjects=core",
     "build": "cd packages/core && npm run build && cd ../plugins/openapi && npm run build && cd ../../serverless && npm run build"
   },
   "workspaces": [
