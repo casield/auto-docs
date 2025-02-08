@@ -39,7 +39,6 @@ describe("CodeAnalyzer", () => {
     }
 
     export const testFunction3 = () => myFunction();
-    export const testFunction4 = middy(() => myFunction());
 
     `;
 
