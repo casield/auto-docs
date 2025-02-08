@@ -17,6 +17,10 @@ describe("CodeAnalyzer", () => {
      * @returns {string}
      */
     export const testFunction = () => {
+      if(true) {
+        return "Hello World";
+      }
+
       // This is a comment
       return myFunction();
     }
@@ -34,16 +38,23 @@ describe("CodeAnalyzer", () => {
       return myFunction();
     }
 
+    export const testFunction3 = () => myFunction();
+    export const testFunction4 = middy(() => myFunction());
+
     `;
 
     const analyzer = new CodeAnalyzer("testFile.ts", options);
     const analysis: ReturnAnalysis = analyzer.analyzeSource(sourceCode);
 
     expect(analysis).toBeDefined();
-    expect(analysis.functions.testFunction.returnStatements.length).toBe(1);
+    expect(analysis.functions.testFunction.returnStatements.length).toBe(2);
     expect(analysis.functions.testFunction.returnStatements[0].value).toBe(
       "myFunction()"
     );
+
+    expect(
+      analysis.functions["TestClass.testMethod"].returnStatements.length
+    ).toBeDefined();
   });
 
   it("should get the return comments", () => {
