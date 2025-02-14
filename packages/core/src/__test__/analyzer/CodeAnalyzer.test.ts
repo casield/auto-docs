@@ -12,10 +12,6 @@ describe("CodeAnalyzer", () => {
     const sourceCode = `
     import { myFunction } from "../../final-framework/main.ts";
 
-    /**
-     * Hello this is a comment
-     * @returns {string}
-     */
     export const testFunction = () => {
       if(true) {
         return "Hello World";
@@ -27,9 +23,6 @@ describe("CodeAnalyzer", () => {
 
     export class TestClass {
       public testMethod() {
-        /**
-         * This is a comment
-         */
         return myFunction();
       }
     }
