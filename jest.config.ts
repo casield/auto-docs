@@ -14,6 +14,12 @@ const config: Config.InitialOptions = {
       displayName: "serverless",
       testMatch: ["<rootDir>/packages/serverless/__tests__/**/*.spec.ts"],
     },
+    {
+      testPathIgnorePatterns: ["<rootDir>/node_modules/"],
+      preset: "ts-jest",
+      displayName: "core",
+      testMatch: ["<rootDir>/packages/core/src/__test__/**/*.test.ts"],
+    },
   ],
 };
 export default config;

@@ -13,6 +13,7 @@ export class LambdaDocsBuilder<T extends DroktTypes.AvailablePlugins> {
 
   constructor(config: DroktTypes.DroktConfig<T>) {
     this.config = config;
+    this.initPlugins();
   }
 
   private initPlugins(): void {
@@ -28,15 +29,11 @@ export class LambdaDocsBuilder<T extends DroktTypes.AvailablePlugins> {
   }
 
   public async run() {
-    this.initPlugins();
-
     this.plugins.forEach((plugin) => {
       const handlersFilter = this._docs.get(plugin.type);
 
       if (handlersFilter) {
         plugin.onBuild(handlersFilter, this);
-      } else {
-        console.warn(`No docs found for plugin ${plugin.type}. Skipping...`);
       }
     });
 
@@ -49,6 +46,14 @@ export class LambdaDocsBuilder<T extends DroktTypes.AvailablePlugins> {
     type: T,
     docs: DroktTypes.Plugins[T]
   ) {
+    if (
+      !this.plugins.some(
+        (plugin) => (plugin.type as DroktTypes.AvailablePlugins) === type
+      )
+    ) {
+      throw new Error(`Plugin ${type} not found`);
+    }
+
     if (!this._docs.has(type)) {
       this._docs.set(type, []);
     }

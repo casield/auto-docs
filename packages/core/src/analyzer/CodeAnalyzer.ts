@@ -132,6 +132,80 @@ export class CodeAnalyzer {
       extra?: { className?: string }
     ) => {
       collectVariableAssignments(path);
+
+      // Handle concise arrow functions with expression bodies.
+      if (
+        t.isArrowFunctionExpression(path.node) &&
+        !t.isBlockStatement(path.node.body)
+      ) {
+        const expr = path.node.body;
+        let returnCode = generator(expr).code;
+        const entry: ReturnStatementEntry = {
+          type: "unknown",
+          value: returnCode,
+          nodePath: path,
+          ...extra,
+        };
+
+        if (t.isCallExpression(expr)) {
+          entry.type = "call";
+          const callee = expr.callee;
+          if (t.isIdentifier(callee)) {
+            entry.relatedFunction = callee.name;
+          } else if (t.isMemberExpression(callee)) {
+            if (t.isIdentifier(callee.object)) {
+              const instanceName = callee.object.name;
+              if (variableAssignments[instanceName]) {
+                entry.relatedFunction = `${variableAssignments[instanceName]}${
+                  t.isIdentifier(callee.property)
+                    ? `.${callee.property.name}`
+                    : ""
+                }`;
+              } else if (t.isIdentifier(callee.property)) {
+                entry.relatedFunction = callee.property.name;
+              }
+            } else if (t.isThisExpression(callee.object)) {
+              if (t.isIdentifier(callee.property) && extra && extra.className) {
+                entry.relatedFunction = `${extra.className}.${callee.property.name}`;
+              }
+            }
+          }
+        } else if (t.isIdentifier(expr)) {
+          const variableName = expr.name;
+          if (variableAssignments[variableName]) {
+            entry.type = "call";
+            entry.relatedFunction = variableAssignments[variableName];
+            entry.value = variableAssignments[variableName];
+          } else {
+            entry.type = "literal";
+          }
+        } else if (
+          t.isNumericLiteral(expr) ||
+          t.isStringLiteral(expr) ||
+          t.isBooleanLiteral(expr) ||
+          t.isNullLiteral(expr)
+        ) {
+          entry.type = "literal";
+        } else if (t.isObjectExpression(expr)) {
+          entry.type = "object";
+        }
+
+        const commentText = getAttachedComments(path);
+        if (commentText) {
+          entry.comment = commentText;
+        }
+
+        if (entry.type === "call" && entry.relatedFunction) {
+          const importedFrom = localImportMap[entry.relatedFunction];
+          if (importedFrom) {
+            entry.importSource = importedFrom;
+          }
+        }
+        addReturnEntry(funcName, entry);
+        return;
+      }
+
+      // For functions with block bodies, traverse for explicit return statements.
       path.traverse({
         ReturnStatement(returnPath) {
           if (!returnPath.node.argument) return;
@@ -143,8 +217,7 @@ export class CodeAnalyzer {
             ...extra,
           };
 
-          // Instead of just checking for leadingComments on the return node,
-          // try to get comments attached via our helper.
+          // Try to get comments attached via our helper.
           const commentText = getAttachedComments(returnPath);
           if (commentText) {
             entry.comment = commentText;
