@@ -1,6 +1,6 @@
 {
-  "name": "@drokt/serverless",
-  "version": "1.0.0",
+  "name": "@auto-docs/serverless",
+  "version": "1.0.1",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -15,8 +15,8 @@
     "@babel/parser": "^7.26.3",
     "@babel/traverse": "^7.26.4",
     "@babel/types": "^7.26.3",
-    "@drokt/core": "1.0.0",
-    "@drokt/openapi-plugin": "1.0.0",
+    "@auto-docs/core": "1.0.1",
+    "@auto-docs/openapi-plugin": "1.0.1",
     "adm-zip": "^0.5.16",
     "serverless": "^4.4.15",
     "zod": "^3.24.1"
@@ -28,5 +28,8 @@
     "@types/node": "^22.10.1",
     "@types/serverless": "^3.12.25",
     "typescript": "^5.7.2"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

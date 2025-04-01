@@ -1,17 +1,17 @@
-import { DroktPlugin } from "./Plugin";
+import { AutoDocsPlugin } from "./Plugin";
 import "./types";
 
 export * from "./Plugin";
 export * from "./analyzer";
 export * from "./utils";
 
-export class LambdaDocsBuilder<T extends DroktTypes.AvailablePlugins> {
-  public config: DroktTypes.DroktConfig<T>;
-  private _docs: Map<T, DroktTypes.Plugins[T][]> = new Map();
+export class LambdaDocsBuilder<T extends AutoDocsTypes.AvailablePlugins> {
+  public config: AutoDocsTypes.AutoDocsConfig<T>;
+  private _docs: Map<T, AutoDocsTypes.Plugins[T][]> = new Map();
 
-  private plugins: DroktPlugin<T>[] = [];
+  private plugins: AutoDocsPlugin<T>[] = [];
 
-  constructor(config: DroktTypes.DroktConfig<T>) {
+  constructor(config: AutoDocsTypes.AutoDocsConfig<T>) {
     this.config = config;
     this.initPlugins();
   }
@@ -23,7 +23,7 @@ export class LambdaDocsBuilder<T extends DroktTypes.AvailablePlugins> {
         instance.onInit(this);
         this.plugins.push(instance);
       } else {
-        throw new Error("Plugin is not a concrete subclass of DroktPlugin");
+        throw new Error("Plugin is not a concrete subclass of AutoDocsPlugin");
       }
     });
   }
@@ -42,13 +42,13 @@ export class LambdaDocsBuilder<T extends DroktTypes.AvailablePlugins> {
     });
   }
 
-  public docs<T extends DroktTypes.AvailablePlugins>(
+  public docs<T extends AutoDocsTypes.AvailablePlugins>(
     type: T,
-    docs: DroktTypes.Plugins[T]
+    docs: AutoDocsTypes.Plugins[T]
   ) {
     if (
       !this.plugins.some(
-        (plugin) => (plugin.type as DroktTypes.AvailablePlugins) === type
+        (plugin) => (plugin.type as AutoDocsTypes.AvailablePlugins) === type
       )
     ) {
       throw new Error(`Plugin ${type} not found`);
@@ -61,9 +61,11 @@ export class LambdaDocsBuilder<T extends DroktTypes.AvailablePlugins> {
     return this;
   }
 
-  private isConcretePlugin(plugin: any): plugin is { new (): DroktPlugin<T> } {
+  private isConcretePlugin(
+    plugin: any
+  ): plugin is { new (): AutoDocsPlugin<T> } {
     return (
-      typeof plugin === "function" && plugin.prototype instanceof DroktPlugin
+      typeof plugin === "function" && plugin.prototype instanceof AutoDocsPlugin
     );
   }
 }

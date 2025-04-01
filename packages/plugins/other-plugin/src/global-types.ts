@@ -1,7 +1,7 @@
-import "@drokt/core";
+import "@auto-docs/core";
 
 declare global {
-  export namespace DroktTypes {
+  export namespace AutoDocsTypes {
     export interface IOtherApi extends IDocs {
       other2: string;
     }

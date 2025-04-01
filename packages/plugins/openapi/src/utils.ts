@@ -1,4 +1,4 @@
-import { NodeReturn, parseComment } from "@drokt/core";
+import { NodeReturn, parseComment } from "@auto-docs/core";
 import { IOpenApiCommentBlockResponse } from "./types";
 
 /**
@@ -18,7 +18,7 @@ export function parseSchemaString(
   schemaStr: string,
   statusCode: number,
   node: NodeReturn
-): DroktTypes.ResponsesObject {
+): AutoDocsTypes.ResponsesObject {
   // 1) Remove the leading "@schema " if present and trim whitespace
   const trimmed = schemaStr.replace(/^@schema\s*/, "").trim();
 
@@ -29,7 +29,7 @@ export function parseSchemaString(
   const parsedVariants = variants.map(parseVariant);
 
   // 4) If only one variant is provided, use it directly; otherwise use "oneOf"
-  let schema: DroktTypes.SchemaObject | DroktTypes.ReferenceObject;
+  let schema: AutoDocsTypes.SchemaObject | AutoDocsTypes.ReferenceObject;
   if (parsedVariants.length === 1) {
     schema = parsedVariants[0];
   } else {
@@ -44,7 +44,7 @@ export function parseSchemaString(
 
   // 5) Build and return the final response object for the given status code.
   // Note: Since statusCode keys are strings in the type, we can rely on TS converting the number.
-  const responseObject: DroktTypes.ResponseObject = {
+  const responseObject: AutoDocsTypes.ResponseObject = {
     description: description?.comment || "",
     content: {
       [description?.type || "application/json"]: {
@@ -66,7 +66,7 @@ export function parseSchemaString(
  */
 function parseVariant(
   variant: string
-): DroktTypes.SchemaObject | DroktTypes.ReferenceObject {
+): AutoDocsTypes.SchemaObject | AutoDocsTypes.ReferenceObject {
   // If the variant starts with '{', assume it's an inline object definition.
   if (variant.startsWith("{")) {
     return parseInlineObject(variant);
@@ -93,7 +93,7 @@ function parseVariant(
  *
  * NOTE: This is a simplistic parser and will not handle nested objects or more complex types.
  */
-function parseInlineObject(objStr: string): DroktTypes.SchemaObject {
+function parseInlineObject(objStr: string): AutoDocsTypes.SchemaObject {
   // Remove the outer braces
   const content = objStr
     .replace(/^\{\s*/, "")

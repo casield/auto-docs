@@ -1,6 +1,6 @@
 {
-  "name": "@drokt/openapi-plugin",
-  "version": "1.0.0",
+  "name": "@auto-docs/openapi-plugin",
+  "version": "1.0.1",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/declarations/index.d.ts",
@@ -11,6 +11,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@drokt/core": "1.0.0"
+    "@auto-docs/core": "1.0.1"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

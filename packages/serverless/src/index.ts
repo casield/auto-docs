@@ -4,8 +4,8 @@ import {
   OpenApiDoc,
   IOpenApiCommentBlockResponse,
   parseSchemaString,
-} from "@drokt/openapi-plugin";
-import { LambdaDocsBuilder, parseComment } from "@drokt/core";
+} from "@auto-docs/openapi-plugin";
+import { LambdaDocsBuilder, parseComment } from "@auto-docs/core";
 import { LambdaFunctionAnalyzer } from "./analyze-function-v2";
 import { collectLeafDescriptions } from "./utils";
 
@@ -99,14 +99,14 @@ class ServerlessPlugin {
 
     results.forEach((result) => {
       const method =
-        result.serverlessFn.events[0].http?.method.toLowerCase() as DroktTypes.IDocsOpenApi["method"];
+        result.serverlessFn.events[0].http?.method.toLowerCase() as AutoDocsTypes.IDocsOpenApi["method"];
       const parsedComment = parseComment<IOpenApiCommentBlockPath>(
         result.analisys.description || ""
       );
 
       const leafDescriptions = collectLeafDescriptions(result.analisys);
 
-      const responses: DroktTypes.IDocsOpenApi["responses"] = {};
+      const responses: AutoDocsTypes.IDocsOpenApi["responses"] = {};
 
       leafDescriptions.forEach((desc, index) => {
         const parsed = parseComment<IOpenApiCommentBlockResponse>(desc.value);

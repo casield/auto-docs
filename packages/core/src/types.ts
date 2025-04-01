@@ -1,7 +1,7 @@
-import { DroktPlugin } from "./Plugin";
+import { AutoDocsPlugin } from "./Plugin";
 
 declare global {
-  export namespace DroktTypes {
+  export namespace AutoDocsTypes {
     export interface IDocs {
       name: string;
       version: string;
@@ -11,10 +11,10 @@ declare global {
 
     export interface PluginConfig {}
 
-    export interface DroktConfig<T extends keyof Plugins> {
+    export interface AutoDocsConfig<T extends keyof Plugins> {
       name: string;
       description: string;
-      plugins: (typeof DroktPlugin<T>)[];
+      plugins: (typeof AutoDocsPlugin<T>)[];
       pluginConfig?: PluginConfig;
     }
 
