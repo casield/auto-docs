@@ -1,4 +1,6 @@
 import Serverless from "serverless";
+import * as fs from "fs";
+import * as path from "path";
 import {
   IOpenApiCommentBlockPath,
   OpenApiDoc,
@@ -11,58 +13,102 @@ import { collectLeafDescriptions } from "./utils";
 
 export type * from "./analyze-function-v2";
 
+interface Logger {
+  info: (message: string) => void;
+  error: (message: string) => void;
+  warn: (message: string) => void;
+  success: (message: string) => void;
+  debug: (message: string) => void;
+}
+
 class ServerlessPlugin {
   serverless: Serverless;
   options: any;
-  utils: any;
-
+  utils: {
+    log: Logger;
+  };
   hooks: { [key: string]: Function };
+  commands: { [key: string]: any };
   builder: LambdaDocsBuilder<"openApi"> | undefined;
 
-  constructor(serverless: Serverless, options: any, utils: any) {
+  constructor(serverless: Serverless, options: any, utils: { log: Logger }) {
     this.serverless = serverless;
     this.options = options;
     this.utils = utils;
 
+    // Define custom commands for the plugin
+    this.commands = {
+      "auto-docs": {
+        usage: "Build the auto docs documentation",
+        lifecycleEvents: ["build"],
+      },
+    };
+
+    // Register hooks for both deploy and auto-docs command
     this.hooks = {
       initialize: () => this.init(),
       "before:deploy:deploy": () => this.beforeDeploy(),
       "after:deploy:deploy": () => this.afterDeploy(),
+      "auto-docs:build": () => this.autoDocsBuild(),
     };
   }
 
   init() {
-    // Initialization
+    // Read custom configuration from serverless.yml if provided
+    const customConfig =
+      this.serverless.service.custom &&
+      this.serverless.service.custom["auto-docs"]
+        ? this.serverless.service.custom["auto-docs"]
+        : {};
+
+    // Custom attributes for the docs project
+    const projectName = customConfig.name || "ProjectName";
+    const projectDescription = customConfig.description;
+    const projectVersion = customConfig.version || "0.0.0";
+    const outputDir = customConfig.outputDir || "docs";
+
+    // Load custom schemas if a schema file is provided
+    const schemaFilePath: string | undefined = customConfig.schemaFile;
+    let customSchemas = {};
+    if (schemaFilePath) {
+      customSchemas = this.loadCustomSchemas(schemaFilePath);
+    }
+
     this.builder = new LambdaDocsBuilder({
-      name: "My Test Project",
-      description: "This is a test project",
+      name: projectName,
+      description: projectDescription,
       plugins: [OpenApiDoc],
       pluginConfig: {
         openApi: {
-          outputDir: "docs",
-          version: "1.0.1",
+          outputDir: outputDir,
+          version: projectVersion,
           schemas: {
-            User: {
-              title: "User",
-              description: "A user object",
-              type: "object",
-              properties: {
-                name: {
-                  type: "string",
-                },
-                age: {
-                  type: "number",
-                },
-              },
-            },
+            ...customSchemas,
           },
         },
       },
     });
-  }
-  async beforeDeploy() {
-    // Before deploy
 
+    this.utils.log.info(
+      `Initialized docs builder for project "${projectName}" in directory "${outputDir}"`
+    );
+  }
+
+  loadCustomSchemas(schemaFilePath: string): object {
+    const fullPath = path.resolve(process.cwd(), schemaFilePath);
+    try {
+      const fileContent = fs.readFileSync(fullPath, "utf8");
+      // Assuming JSON format for now. Extend parsing here if YAML support is needed.
+      return JSON.parse(fileContent);
+    } catch (error: any) {
+      this.utils.log.error(
+        `Error reading schema file at ${schemaFilePath}: ${error.message}`
+      );
+      return {};
+    }
+  }
+
+  async buildDocs() {
     if (!this.builder) {
       throw new Error("Builder not initialized");
     }
@@ -82,15 +128,15 @@ class ServerlessPlugin {
         const hasHttpEvent = serverlessFn.events.some(
           (event: any) => event.http || event.httpApi
         );
-        // Only get the function with a api gateway event
+        // Only include functions with an API Gateway event
         if (!hasHttpEvent) {
           return null;
         }
 
-        const analisys = la.analyzeFunction(serverlessFn);
+        const analysis = la.analyzeFunction(serverlessFn);
 
         return {
-          analisys,
+          analysis,
           functionName,
           serverlessFn,
         };
@@ -99,29 +145,29 @@ class ServerlessPlugin {
 
     results.forEach((result) => {
       const method =
-        result.serverlessFn.events[0].http?.method.toLowerCase() as AutoDocsTypes.IDocsOpenApi["method"];
+        result.serverlessFn.events[0].http?.method?.toLowerCase() || "get";
       const parsedComment = parseComment<IOpenApiCommentBlockPath>(
-        result.analisys.description || ""
+        result.analysis.description || ""
       );
 
-      const leafDescriptions = collectLeafDescriptions(result.analisys);
+      const leafDescriptions = collectLeafDescriptions(result.analysis);
 
       const responses: AutoDocsTypes.IDocsOpenApi["responses"] = {};
 
-      leafDescriptions.forEach((desc, index) => {
+      leafDescriptions.forEach((desc) => {
         const parsed = parseComment<IOpenApiCommentBlockResponse>(desc.value);
         const statusCode = Number(parsed?.statusCode || 200);
-        const parsedSchemaStriing = parseSchemaString(
+        const parsedSchema = parseSchemaString(
           parsed?.schema || "{}",
           statusCode,
           desc.node
         );
-        responses[statusCode] = parsedSchemaStriing[statusCode];
+        responses[statusCode] = parsedSchema[statusCode];
       });
 
       this.builder?.docs("openApi", {
         summary: parsedComment?.comment,
-        method: method || "get",
+        method: method as AutoDocsTypes.IDocsOpenApi["method"],
         name: parsedComment?.name || result.functionName,
         version: parsedComment?.version || "1.0.0",
         responses,
@@ -130,8 +176,11 @@ class ServerlessPlugin {
     });
 
     await this.builder.run();
+    this.utils.log.success("Auto docs built successfully.");
+  }
 
-    throw new Error("Test error");
+  async beforeDeploy() {
+    await this.buildDocs();
   }
 
   getApiGatewayEvents(
@@ -142,18 +191,14 @@ class ServerlessPlugin {
     return (
       fn.events
         ?.filter((event) => event.http || event.httpApi)
-        .map((event) => {
-          if (event.http) {
-            return event.http;
-          }
-
-          return event.httpApi;
-        }) || []
+        .map((event) => (event.http ? event.http : event.httpApi)) || []
     );
   }
 
-  afterDeploy() {
-    // After deploy
+  afterDeploy() {}
+
+  async autoDocsBuild() {
+    await this.buildDocs();
   }
 }
 

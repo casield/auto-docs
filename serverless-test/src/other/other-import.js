@@ -7,6 +7,19 @@ export const otherImport = async () => {
   if (true) {
     const c = new MyClass();
     return c.myMethod();
+  } else {
+    /**
+     * @auto-docs
+     * This is another return object
+     * @schema { message: string }
+     * @statusCode 500
+     */
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: "Error",
+      }),
+    };
   }
 };
 

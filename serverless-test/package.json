@@ -1,5 +1,5 @@
 {
-  "name": "tests-serverless",
+  "name": "serverless-test",
   "version": "1.0.1",
   "description": "",
   "main": "index.js",
@@ -14,9 +14,7 @@
   "license": "ISC",
   "dependencies": {
     "serverless": "^4.4.15",
-    "@auto-docs/serverless": "1.0.1",
-    "@auto-docs/core": "1.0.1",
-    "@auto-docs/openapi-plugin": "1.0.1"
+    "@auto-docs/serverless": "1.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.1",

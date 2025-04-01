@@ -9,6 +9,13 @@ provider:
   name: aws
   runtime: nodejs20.x
 
+custom:
+  auto-docs:
+    name: "Serverless Test"
+    description: "This is a test for the Serverless Framework Auto Docs plugin."
+    version: "1.0.0"
+    outputDir: "docs"
+
 functions:
   hello:
     handler: src/handlers/handler.hello
@@ -25,4 +32,4 @@ functions:
           method: post
 
 plugins:
-  - "../packages/serverless/dist/index.js"
+  - "@auto-docs/serverless"
