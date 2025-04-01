@@ -25,4 +25,4 @@ functions:
           method: post
 
 plugins:
-  - "../packages/serverless/dist/index.js"
+  - "@auto-docs/serverless"
