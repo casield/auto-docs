@@ -1,6 +1,6 @@
 import { LambdaDocsBuilder } from ".";
 
-export abstract class DroktPlugin<T extends keyof DroktTypes.Plugins> {
+export abstract class AutoDocsPlugin<T extends keyof AutoDocsTypes.Plugins> {
   type: T;
 
   public constructor(type: T) {
@@ -8,11 +8,11 @@ export abstract class DroktPlugin<T extends keyof DroktTypes.Plugins> {
   }
 
   public onBuild(
-    docs: DroktTypes.Plugins[T][],
-    builder: LambdaDocsBuilder<DroktTypes.AvailablePlugins>
+    docs: AutoDocsTypes.Plugins[T][],
+    builder: LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins>
   ) {}
 
-  public onInit(builder: LambdaDocsBuilder<DroktTypes.AvailablePlugins>) {}
+  public onInit(builder: LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins>) {}
 
-  public onEnd(builder: LambdaDocsBuilder<DroktTypes.AvailablePlugins>) {}
+  public onEnd(builder: LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins>) {}
 }

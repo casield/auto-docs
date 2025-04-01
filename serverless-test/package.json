@@ -14,9 +14,9 @@
   "license": "ISC",
   "dependencies": {
     "serverless": "^4.4.15",
-    "@drokt/serverless": "1.0.0",
-    "@drokt/core": "1.0.0",
-    "@drokt/openapi-plugin": "1.0.0"
+    "@auto-docs/serverless": "1.0.0",
+    "@auto-docs/core": "1.0.0",
+    "@auto-docs/openapi-plugin": "1.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.1",

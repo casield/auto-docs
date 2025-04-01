@@ -1,5 +1,5 @@
 {
-  "name": "@drokt/serverless",
+  "name": "@auto-docs/serverless",
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.js",
@@ -15,8 +15,8 @@
     "@babel/parser": "^7.26.3",
     "@babel/traverse": "^7.26.4",
     "@babel/types": "^7.26.3",
-    "@drokt/core": "1.0.0",
-    "@drokt/openapi-plugin": "1.0.0",
+    "@auto-docs/core": "1.0.0",
+    "@auto-docs/openapi-plugin": "1.0.0",
     "adm-zip": "^0.5.16",
     "serverless": "^4.4.15",
     "zod": "^3.24.1"

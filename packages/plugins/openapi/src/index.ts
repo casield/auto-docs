@@ -1,21 +1,21 @@
 import "./global-types";
 import "./open-api";
-import { DroktPlugin, LambdaDocsBuilder } from "@drokt/core";
+import { AutoDocsPlugin, LambdaDocsBuilder } from "@auto-docs/core";
 import fs from "fs";
 
 export * from "./types";
 export * from "./utils";
 
-export class OpenApiDoc extends DroktPlugin<"openApi"> {
+export class OpenApiDoc extends AutoDocsPlugin<"openApi"> {
   constructor() {
     super("openApi");
   }
 
   public onBuild(
-    docs: DroktTypes.IDocsOpenApi[],
-    builder: LambdaDocsBuilder<DroktTypes.AvailablePlugins>
+    docs: AutoDocsTypes.IDocsOpenApi[],
+    builder: LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins>
   ): void {
-    const spec: DroktTypes.OpenAPISpec = {
+    const spec: AutoDocsTypes.OpenAPISpec = {
       openapi: "3.0.0",
       info: {
         title: builder.config.name,
@@ -34,13 +34,13 @@ export class OpenApiDoc extends DroktPlugin<"openApi"> {
           },
         };
         return acc;
-      }, {} as DroktTypes.OpenAPISpec["paths"]),
+      }, {} as AutoDocsTypes.OpenAPISpec["paths"]),
     };
 
     this.saveSpec(spec, builder.config.pluginConfig?.openApi.outputDir || "");
   }
 
-  saveSpec(spec: DroktTypes.OpenAPISpec, outputDir: string): void {
+  saveSpec(spec: AutoDocsTypes.OpenAPISpec, outputDir: string): void {
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir);
     }
@@ -51,5 +51,5 @@ export class OpenApiDoc extends DroktPlugin<"openApi"> {
     );
   }
 
-  onEnd(builder: LambdaDocsBuilder<DroktTypes.AvailablePlugins>): void {}
+  onEnd(builder: LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins>): void {}
 }

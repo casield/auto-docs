@@ -1,4 +1,4 @@
-import { NodeReturn } from "@drokt/core";
+import { NodeReturn } from "@auto-docs/core";
 
 /**
  * Recursively collects the `description` from every leaf node in the tree.

@@ -7,7 +7,7 @@ import {
   LinkedCallTreeBuilder,
   NodeReturn,
   ReturnAnalysis,
-} from "@drokt/core";
+} from "@auto-docs/core";
 
 interface TsConfig {
   compilerOptions?: {

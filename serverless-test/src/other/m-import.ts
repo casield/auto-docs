@@ -1,4 +1,4 @@
-import { response } from "@drokt/serverless";
+import { response } from "@auto-docs/serverless";
 
 export const mImport = async () => {
   console.log("otherImport");

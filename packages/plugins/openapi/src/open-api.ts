@@ -1,5 +1,5 @@
 declare global {
-  export namespace DroktTypes {
+  export namespace AutoDocsTypes {
     /**
      * A simplified TypeScript definition for the OpenAPI v3 Specification.
      */
