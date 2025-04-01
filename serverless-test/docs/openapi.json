@@ -37,6 +37,21 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "This is another return object",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
