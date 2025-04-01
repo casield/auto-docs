@@ -13,15 +13,25 @@ import { collectLeafDescriptions } from "./utils";
 
 export type * from "./analyze-function-v2";
 
+interface Logger {
+  info: (message: string) => void;
+  error: (message: string) => void;
+  warn: (message: string) => void;
+  success: (message: string) => void;
+  debug: (message: string) => void;
+}
+
 class ServerlessPlugin {
   serverless: Serverless;
   options: any;
-  utils: any;
+  utils: {
+    log: Logger;
+  };
   hooks: { [key: string]: Function };
   commands: { [key: string]: any };
   builder: LambdaDocsBuilder<"openApi"> | undefined;
 
-  constructor(serverless: Serverless, options: any, utils: any) {
+  constructor(serverless: Serverless, options: any, utils: { log: Logger }) {
     this.serverless = serverless;
     this.options = options;
     this.utils = utils;
@@ -50,6 +60,14 @@ class ServerlessPlugin {
       this.serverless.service.custom["auto-docs"]
         ? this.serverless.service.custom["auto-docs"]
         : {};
+
+    // Custom attributes for the docs project
+    const projectName = customConfig.name || "ProjectName";
+    const projectDescription = customConfig.description;
+    const projectVersion = customConfig.version || "0.0.0";
+    const outputDir = customConfig.outputDir || "docs";
+
+    // Load custom schemas if a schema file is provided
     const schemaFilePath: string | undefined = customConfig.schemaFile;
     let customSchemas = {};
     if (schemaFilePath) {
@@ -57,19 +75,23 @@ class ServerlessPlugin {
     }
 
     this.builder = new LambdaDocsBuilder({
-      name: "My Test Project",
-      description: "This is a test project",
+      name: projectName,
+      description: projectDescription,
       plugins: [OpenApiDoc],
       pluginConfig: {
         openApi: {
-          outputDir: "docs",
-          version: "1.0.1",
+          outputDir: outputDir,
+          version: projectVersion,
           schemas: {
             ...customSchemas,
           },
         },
       },
     });
+
+    this.utils.log.info(
+      `Initialized docs builder for project "${projectName}" in directory "${outputDir}"`
+    );
   }
 
   loadCustomSchemas(schemaFilePath: string): object {
@@ -79,7 +101,7 @@ class ServerlessPlugin {
       // Assuming JSON format for now. Extend parsing here if YAML support is needed.
       return JSON.parse(fileContent);
     } catch (error: any) {
-      this.serverless.cli.log(
+      this.utils.log.error(
         `Error reading schema file at ${schemaFilePath}: ${error.message}`
       );
       return {};
@@ -154,7 +176,7 @@ class ServerlessPlugin {
     });
 
     await this.builder.run();
-    this.serverless.cli.log("Auto docs built successfully.");
+    this.utils.log.success("Auto docs built successfully.");
   }
 
   async beforeDeploy() {
@@ -173,9 +195,7 @@ class ServerlessPlugin {
     );
   }
 
-  afterDeploy() {
-    // Placeholder for after-deploy tasks, if needed.
-  }
+  afterDeploy() {}
 
   async autoDocsBuild() {
     await this.buildDocs();

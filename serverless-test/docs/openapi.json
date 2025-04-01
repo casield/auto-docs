@@ -1,26 +1,12 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "My Test Project",
-    "version": "1.0.1",
-    "description": "This is a test project"
+    "title": "Serverless Test",
+    "version": "1.0.0",
+    "description": "This is a test for the Serverless Framework Auto Docs plugin."
   },
   "components": {
-    "schemas": {
-      "User": {
-        "title": "User",
-        "description": "A user object",
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "age": {
-            "type": "number"
-          }
-        }
-      }
-    }
+    "schemas": {}
   },
   "paths": {
     "/hello": {

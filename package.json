@@ -6,10 +6,11 @@
   "scripts": {
     "test:serverless": "jest --selectProjects=serverless",
     "test:core": "jest --selectProjects=core",
-    "build": "npx turbo run build"
+    "build": "npx turbo run build --filter=serverless-test"
   },
   "workspaces": [
-    "packages/*/**"
+    "packages/*/**",
+    "serverless-test/**"
   ],
   "author": "",
   "license": "ISC",
