@@ -9,8 +9,7 @@
     "build": "cd packages/core && npm run build && cd ../plugins/openapi && npm run build && cd ../../serverless && npm run build"
   },
   "workspaces": [
-    "packages/*/**",
-    "./serverless-test"
+    "packages/*/**"
   ],
   "author": "",
   "license": "ISC",

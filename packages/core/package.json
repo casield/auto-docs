@@ -1,10 +1,9 @@
 {
   "name": "@auto-docs/core",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/declarations/index.d.ts",
-  "private": true,
   "target": "es2015",
   "scripts": {
     "test": "npx jest",
@@ -19,5 +18,8 @@
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.146"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
