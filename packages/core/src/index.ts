@@ -3,7 +3,7 @@ import { AutoDocsPlugin } from "./Plugin";
 import "./types";
 
 export * from "./Plugin";
-export type * from "./analyzer";
+export * from "./analyzer";
 export * from "./utils";
 export * from "./linkers";
 
