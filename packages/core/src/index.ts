@@ -1,18 +1,22 @@
+import { Linker, MemoryLinker } from "./linkers";
 import { AutoDocsPlugin } from "./Plugin";
 import "./types";
 
 export * from "./Plugin";
 export type * from "./analyzer";
 export * from "./utils";
+export * from "./linkers";
 
 export class LambdaDocsBuilder<T extends AutoDocsTypes.AvailablePlugins> {
   public config: AutoDocsTypes.AutoDocsConfig<T>;
-  private _docs: Map<T, AutoDocsTypes.Plugins[T][]> = new Map();
+  private _docs: Linker<T>;
 
   private plugins: AutoDocsPlugin<T>[] = [];
 
   constructor(config: AutoDocsTypes.AutoDocsConfig<T>) {
     this.config = config;
+
+    this._docs = config.linker || new MemoryLinker();
     this.initPlugins();
   }
 
@@ -29,11 +33,14 @@ export class LambdaDocsBuilder<T extends AutoDocsTypes.AvailablePlugins> {
   }
 
   public async run() {
-    this.plugins.forEach((plugin) => {
-      const handlersFilter = this._docs.get(plugin.type);
+    const handlersFilter = await this._docs.pull();
 
+    console.log("Handlers Filter", handlersFilter);
+    this.plugins.forEach((plugin) => {
       if (handlersFilter) {
-        plugin.onBuild(handlersFilter, this);
+        const f = handlersFilter[plugin.type];
+        const map = f.map((item) => item.data);
+        plugin.onBuild(map, this);
       }
     });
 
@@ -42,7 +49,7 @@ export class LambdaDocsBuilder<T extends AutoDocsTypes.AvailablePlugins> {
     });
   }
 
-  public docs<T extends AutoDocsTypes.AvailablePlugins>(
+  public async docs<T extends AutoDocsTypes.AvailablePlugins>(
     type: T,
     docs: AutoDocsTypes.Plugins[T]
   ) {
@@ -53,11 +60,15 @@ export class LambdaDocsBuilder<T extends AutoDocsTypes.AvailablePlugins> {
     ) {
       throw new Error(`Plugin ${type} not found`);
     }
+    this._docs.link({
+      data: docs,
+      name: type,
+      version:
+        "version" in docs ? (docs as { version: string }).version : "0.0.0",
+      description: "TODO",
+      type,
+    });
 
-    if (!this._docs.has(type)) {
-      this._docs.set(type, []);
-    }
-    this._docs.get(type)?.push(docs);
     return this;
   }
 

@@ -48,7 +48,7 @@ describe("Dynamic", () => {
       };
     }, builder);
 
-    builder.docs("openApi", {
+    await builder.docs("openApi", {
       type: "method",
       name: "Test dynamic",
       version: "1.0.0",
