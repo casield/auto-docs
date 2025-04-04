@@ -1,8 +1,4 @@
-import Serverless from "serverless";
-import { LambdaDocsBuilder } from "@auto-docs/core";
-
 export * from "./dynamic";
-export * from "./DynamoLinker";
 
 // interface Logger {
 //   info: (message: string) => void;

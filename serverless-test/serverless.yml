@@ -8,6 +8,16 @@ service: serverless-test
 provider:
   name: aws
   runtime: nodejs20.x
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+            - dynamodb:Scan
+          Resource:
+            - arn:aws:dynamodb:us-east-1:435461726783:table/dynamicDocs
 
 custom:
   auto-docs:
