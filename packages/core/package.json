@@ -3,11 +3,11 @@
   "version": "1.0.1",
   "description": "",
   "main": "dist/index.js",
-  "types": "dist/declarations/index.d.ts",
+  "types": "dist/index.d.ts",
   "target": "es2015",
   "scripts": {
     "test": "npx jest",
-    "build": "tsc"
+    "build": "tsup"
   },
   "author": "",
   "license": "ISC",
@@ -18,7 +18,7 @@
   "devDependencies": {
     "@types/aws-lambda": "^8.10.146",
     "@types/jest": "^29.5.0",
-    "aws-lambda": "^1.0.7"
+    "tsup": "^8.4.0"
   },
   "publishConfig": {
     "access": "public"

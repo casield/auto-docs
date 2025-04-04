@@ -1,7 +1,9 @@
 import { otherImport } from "@/other/other-import";
-import { dynamicAutoDocs } from "@auto-docs/serverless";
+import { dynamicAutoDocs } from "@auto-docs/serverless-dynamic";
 import { LambdaDocsBuilder } from "@auto-docs/core";
 import { OpenApiDoc } from "@auto-docs/openapi-plugin";
+
+console.log("Dynamic", dynamicAutoDocs);
 
 /**
  * @auto-docs
@@ -35,6 +37,7 @@ const builder = new LambdaDocsBuilder({
       schemas: {},
     },
   },
+  // linker: new DynamoLinker({
 
   plugins: [OpenApiDoc],
 });

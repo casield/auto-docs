@@ -7,14 +7,13 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "npx serverless dev",
-    "deploy": "npx serverless deploy",
-    "deploy:dev": "cd .. && npm run build && cd ./serverless-test && npx serverless deploy"
+    "deploy": "npx serverless deploy"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "serverless": "^4.4.15",
-    "@auto-docs/serverless": "1.1.0",
+    "@auto-docs/serverless-dynamic": "1.0.0",
     "@auto-docs/core": "workspace:*",
     "@auto-docs/open-api": "workspace:*"
   },

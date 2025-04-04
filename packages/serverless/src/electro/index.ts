@@ -1,7 +1,7 @@
-import DynamoDB from "aws-sdk/clients/dynamodb";
+import DynamoDB from "@aws-sdk/client-dynamodb";
 import { Entity } from "electrodb";
 
-const client = new DynamoDB.DocumentClient();
+const client = new DynamoDB.DynamoDBClient();
 
 export const LinkerObjectEntity = new Entity(
   {
