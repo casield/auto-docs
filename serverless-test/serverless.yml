@@ -30,6 +30,3 @@ functions:
       - httpApi:
           path: /bye
           method: post
-
-plugins:
-  - "@auto-docs/serverless"

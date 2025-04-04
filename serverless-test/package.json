@@ -14,7 +14,9 @@
   "license": "ISC",
   "dependencies": {
     "serverless": "^4.4.15",
-    "@auto-docs/serverless": "1.1.0"
+    "@auto-docs/serverless": "1.1.0",
+    "@auto-docs/core": "workspace:*",
+    "@auto-docs/open-api": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.10.1",

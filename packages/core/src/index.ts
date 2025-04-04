@@ -2,7 +2,7 @@ import { AutoDocsPlugin } from "./Plugin";
 import "./types";
 
 export * from "./Plugin";
-export * from "./analyzer";
+export type * from "./analyzer";
 export * from "./utils";
 
 export class LambdaDocsBuilder<T extends AutoDocsTypes.AvailablePlugins> {
@@ -33,6 +33,7 @@ export class LambdaDocsBuilder<T extends AutoDocsTypes.AvailablePlugins> {
       const handlersFilter = this._docs.get(plugin.type);
 
       if (handlersFilter) {
+        console.log("On build", handlersFilter);
         plugin.onBuild(handlersFilter, this);
       }
     });

@@ -4,13 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test:serverless": "jest --selectProjects=serverless",
-    "test:core": "jest --selectProjects=core",
-    "build": "npx turbo run build --filter=serverless-test"
+    "test:serverless": "npx jest --selectProjects=serverless",
+    "test:core": "npx jest",
+    "build": "npx turbo run build",
+    "dev": "npx turbo run dev"
   },
   "workspaces": [
-    "packages/*/**",
-    "serverless-test/**"
+    "packages/**/*",
+    "serverless-test/*"
   ],
   "author": "",
   "license": "ISC",

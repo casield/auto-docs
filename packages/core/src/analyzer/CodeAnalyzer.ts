@@ -395,10 +395,14 @@ export class CodeAnalyzer {
                 const initPath = varPath.get("init");
                 collectReturnStatements(initPath as NodePath<t.Node>, funcName);
                 let commentText = "";
-                if (!Array.isArray(initPath) && initPath.node.leadingComments) {
-                  commentText = initPath.node.leadingComments
-                    .map((c) => c.value.trim())
-                    .join("\n");
+                if (
+                  !Array.isArray(initPath) &&
+                  initPath.node?.leadingComments
+                ) {
+                  commentText =
+                    initPath.node?.leadingComments
+                      ?.map((c) => c.value.trim())
+                      .join("\n") || "";
                 }
                 if (
                   !commentText &&

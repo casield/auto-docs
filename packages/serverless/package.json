@@ -5,18 +5,19 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "build": "tsc"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@auto-docs/core": "1.0.1",
+    "@auto-docs/openapi-plugin": "1.0.1",
     "@babel/generator": "^7.26.3",
     "@babel/parser": "^7.26.3",
     "@babel/traverse": "^7.26.4",
     "@babel/types": "^7.26.3",
-    "@auto-docs/core": "1.0.1",
-    "@auto-docs/openapi-plugin": "1.0.1",
+    "@types/aws-lambda": "^8.10.148",
     "adm-zip": "^0.5.16",
     "serverless": "^4.4.15",
     "zod": "^3.24.1"
