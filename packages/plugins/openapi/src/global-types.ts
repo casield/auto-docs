@@ -23,9 +23,13 @@ declare global {
       type: "response";
       data: {
         statusCode: number;
+        path: {
+          method: string;
+          path: string;
+        };
         description?: string;
         contentType?: string;
-        schema?: SchemaObject;
+        schema?: SchemaObject | ReferenceObject;
       };
     }
 

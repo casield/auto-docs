@@ -33,7 +33,6 @@ export class LambdaDocsBuilder<T extends AutoDocsTypes.AvailablePlugins> {
       const handlersFilter = this._docs.get(plugin.type);
 
       if (handlersFilter) {
-        console.log("On build", handlersFilter);
         plugin.onBuild(handlersFilter, this);
       }
     });

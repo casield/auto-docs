@@ -37,55 +37,43 @@ export class OpenApiDoc extends AutoDocsPlugin<"openApi"> {
           summary,
           description,
           tags,
-          responses: {
-            200: {
-              description: "Success",
-              content: {
-                "application/json": {
-                  schema: {
-                    type: "object",
-                    properties: builder.config.pluginConfig?.openApi.schemas,
-                  },
-                },
-              },
-            },
-          },
+          responses: {},
         };
       } else if (doc.type === "response") {
-        const { statusCode, description, contentType, schema } = doc.data;
-        const response = {
+        const { statusCode, description, contentType, schema, path } = doc.data;
+        const typedPath = path.path as keyof typeof spec.paths;
+        const typedMethod =
+          path.method as keyof (typeof spec.paths)[typeof typedPath];
+
+        const pathResolved = spec.paths[typedPath]?.[typedMethod];
+
+        if (!pathResolved) {
+          throw new Error(
+            `Path ${typedPath} with method ${typedMethod} not found in OpenAPI spec.`
+          );
+        }
+
+        if (
+          !pathResolved ||
+          typeof pathResolved !== "object" ||
+          !("responses" in pathResolved)
+        ) {
+          throw new Error(
+            `Path ${typedPath} with method ${typedMethod} does not have a responses object.`
+          );
+        }
+
+        if (!pathResolved.responses) {
+          pathResolved.responses = {};
+        }
+        pathResolved.responses[statusCode] = {
           description: description || "No description provided",
           content: {
             [contentType || "application/json"]: {
-              schema: schema || {
-                type: "object",
-                properties: builder.config.pluginConfig?.openApi.schemas,
-              },
+              schema: schema,
             },
           },
         };
-        for (const path in spec.paths) {
-          for (const method in spec.paths[path]) {
-            const typedPath = path as keyof typeof spec.paths;
-            const typedMethod =
-              method as keyof (typeof spec.paths)[typeof typedPath];
-
-            const pathResolved = spec.paths[typedPath]?.[typedMethod];
-
-            if (
-              !pathResolved ||
-              typeof pathResolved !== "object" ||
-              !("responses" in pathResolved)
-            ) {
-              continue;
-            }
-
-            if (!pathResolved.responses) {
-              pathResolved.responses = {};
-            }
-            pathResolved.responses[statusCode] = response;
-          }
-        }
       }
     });
 

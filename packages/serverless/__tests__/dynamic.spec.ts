@@ -2,6 +2,7 @@ import { LambdaDocsBuilder } from "@auto-docs/core";
 import { OpenApiDoc } from "@auto-docs/openapi-plugin";
 import { dynamicAutoDocs } from "../src/dynamic";
 import { stat } from "fs";
+import path from "path";
 
 describe("Dynamic", () => {
   const builder = new LambdaDocsBuilder({
@@ -11,7 +12,6 @@ describe("Dynamic", () => {
       openApi: {
         outputDir: "docs",
         version: "1.0.0",
-        schemas: {},
       },
     },
     plugins: [OpenApiDoc],
@@ -22,14 +22,55 @@ describe("Dynamic", () => {
       return {
         statusCode: 200,
         body: JSON.stringify({
-          message: "Go Serverless v1.0! Your function executed successfully!",
+          array: ["hi"],
+          boolean: true,
+          number: 1,
+          string: "hi",
+          object: {
+            array: ["hi"],
+            boolean: true,
+            number: 1,
+            string: "hi",
+            object: {
+              array: ["hi"],
+              boolean: true,
+              number: 1,
+              string: "hi",
+              object: {
+                array: ["hi"],
+                boolean: true,
+                number: 1,
+                string: "hi",
+              },
+            },
+          },
         }),
       };
     }, builder);
 
-    await handler({} as any, {} as any, undefined as any);
+    builder.docs("openApi", {
+      type: "method",
+      name: "Test dynamic",
+      version: "1.0.0",
+      data: {
+        method: "get",
+        path: "/hello",
+        summary: "Test dynamic",
+        description: "Test dynamic",
+        tags: ["hello"],
+      },
+    });
 
-    // await builder.run();
+    await handler(
+      {
+        httpMethod: "get",
+        path: "/hello",
+      } as any,
+      {} as any,
+      undefined as any
+    );
+
+    await builder.run();
 
     console.log("builder", builder);
   });

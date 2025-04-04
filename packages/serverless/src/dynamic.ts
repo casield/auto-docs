@@ -34,10 +34,11 @@ export const dynamicAutoDocs = <T extends "openApi">(
           statusCode: response.statusCode,
           description: "Test dynamic",
           contentType: "application/json",
-          schema: {
-            type: "object",
-            properties: createPropertiesFromBody(response.body),
+          path: {
+            method: event.httpMethod,
+            path: event.path,
           },
+          schema: createPropertiesFromBody(JSON.parse(response.body || "{}")),
         },
       });
 
@@ -48,14 +49,43 @@ export const dynamicAutoDocs = <T extends "openApi">(
   };
 };
 
-function createPropertiesFromBody(body: any): { [key: string]: any } {
-  const properties: { [key: string]: any } = {};
+function createPropertiesFromBody(body: any) {
+  const properties: Record<
+    string,
+    AutoDocsTypes.SchemaObject | AutoDocsTypes.ReferenceObject
+  > = {};
   for (const key in body) {
-    if (typeof body[key] === "object") {
+    if (typeof body[key] === "object" && !Array.isArray(body[key])) {
       properties[key] = createPropertiesFromBody(body[key]);
+    } else if (typeof body[key] === "string") {
+      properties[key] = {
+        type: "string",
+      };
+    } else if (Array.isArray(body[key])) {
+      properties[key] = {
+        type: "array",
+        items: {
+          type:
+            typeof body[key][0] === "object" ? "object" : typeof body[key][0],
+          items:
+            typeof body[key][0] === "string"
+              ? undefined
+              : createPropertiesFromBody(body[key][0]),
+        },
+      };
+    } else if (typeof body[key] === "number") {
+      properties[key] = { type: "number" };
+    } else if (typeof body[key] === "boolean") {
+      properties[key] = { type: "boolean" };
+    } else if (body[key] === null) {
+      properties[key] = { type: "null" };
     } else {
       properties[key] = { type: typeof body[key] };
     }
   }
-  return properties;
+  const schema: AutoDocsTypes.SchemaObject = {
+    type: "object",
+    properties,
+  };
+  return schema;
 }
