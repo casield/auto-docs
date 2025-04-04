@@ -32,21 +32,27 @@ export class LambdaDocsBuilder<T extends AutoDocsTypes.AvailablePlugins> {
     });
   }
 
-  public async run() {
+  public async run<T extends AutoDocsTypes.AvailablePlugins>(): Promise<
+    Record<T, AutoDocsTypes.PluginResponse>
+  > {
     const handlersFilter = await this._docs.pull();
-
-    console.log("Handlers Filter", handlersFilter);
+    const results: Record<
+      AutoDocsTypes.AvailablePlugins,
+      AutoDocsTypes.PluginResponse
+    > = {};
     this.plugins.forEach((plugin) => {
       if (handlersFilter) {
         const f = handlersFilter[plugin.type];
         const map = f.map((item) => item.data);
-        plugin.onBuild(map, this);
+        results[plugin.type] = plugin.onBuild(map, this);
       }
     });
 
     this.plugins.forEach((plugin) => {
       plugin.onEnd(this);
     });
+
+    return results;
   }
 
   public async docs<T extends AutoDocsTypes.AvailablePlugins>(

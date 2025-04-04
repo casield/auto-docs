@@ -7,10 +7,12 @@ export abstract class AutoDocsPlugin<T extends keyof AutoDocsTypes.Plugins> {
     this.type = type;
   }
 
-  public onBuild(
+  public onBuild<C>(
     docs: AutoDocsTypes.Plugins[T][],
     builder: LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins>
-  ) {}
+  ): C {
+    throw new Error("Method not implemented.");
+  }
 
   public onInit(builder: LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins>) {}
 

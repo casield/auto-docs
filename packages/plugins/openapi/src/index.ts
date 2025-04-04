@@ -10,13 +10,13 @@ export class OpenApiDoc extends AutoDocsPlugin<"openApi"> {
     super("openApi");
   }
 
-  public onBuild(
+  public onBuild<C>(
     docs: (
       | AutoDocsTypes.IDocsOpenApiMethod
       | AutoDocsTypes.IDocsOpenApiResponse
     )[],
     builder: LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins>
-  ): void {
+  ) {
     const spec: AutoDocsTypes.OpenAPISpec = {
       openapi: "3.0.0",
       info: {
@@ -77,7 +77,7 @@ export class OpenApiDoc extends AutoDocsPlugin<"openApi"> {
       }
     });
 
-    console.log("OpenAPI Spec:", JSON.stringify(spec, null, 2));
+    return spec as unknown as C;
   }
   onEnd(builder: LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins>): void {}
 }

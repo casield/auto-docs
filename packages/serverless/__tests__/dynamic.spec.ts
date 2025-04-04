@@ -36,12 +36,6 @@ describe("Dynamic", () => {
               boolean: true,
               number: 1,
               string: "hi",
-              object: {
-                array: ["hi"],
-                boolean: true,
-                number: 1,
-                string: "hi",
-              },
             },
           },
         }),
@@ -70,8 +64,10 @@ describe("Dynamic", () => {
       undefined as any
     );
 
-    await builder.run();
+    const result = await builder.run();
 
-    console.log("builder", builder);
+    expect(result.openApi).toBeDefined();
+
+    console.log("builder", JSON.stringify(result.openApi, null, 2));
   });
 });

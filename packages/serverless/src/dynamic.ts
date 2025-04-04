@@ -26,7 +26,7 @@ export const dynamicAutoDocs = <T extends "openApi">(
     );
 
     if (typeof response === "object" && response.statusCode) {
-      builder.docs("openApi", {
+      await builder.docs("openApi", {
         type: "response",
         name: "Test dynamic",
         version: "1.0.0",
@@ -41,8 +41,6 @@ export const dynamicAutoDocs = <T extends "openApi">(
           schema: createPropertiesFromBody(JSON.parse(response.body || "{}")),
         },
       });
-
-      console.log("response", builder);
     }
 
     return response;

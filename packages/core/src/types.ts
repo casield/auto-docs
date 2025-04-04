@@ -11,6 +11,8 @@ declare global {
 
     export interface PluginConfig {}
 
+    export interface PluginResponse {}
+
     export interface ILinker<T extends keyof Plugins> {
       link(doc: AutoDocsTypes.LinkerObject<T>): Promise<void>;
 

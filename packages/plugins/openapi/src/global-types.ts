@@ -37,6 +37,14 @@ declare global {
       openApi: IDocsOpenApiMethod | IDocsOpenApiResponse;
     }
 
+    export interface PluginResponse {
+      openApi: {
+        spec: OpenAPISpec;
+        outputDir: string;
+        version: string;
+      };
+    }
+
     export interface PluginConfig {
       openApi: {
         outputDir: string;
