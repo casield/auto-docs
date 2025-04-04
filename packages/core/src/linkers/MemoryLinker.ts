@@ -6,10 +6,10 @@ export class MemoryLinker<
   private docs: Record<string, AutoDocsTypes.LinkerObject<T>[]> = {};
 
   public async link(doc: AutoDocsTypes.LinkerObject<T>): Promise<void> {
-    if (!this.docs[doc.name]) {
-      this.docs[doc.name] = [];
+    if (!this.docs[doc.plugin]) {
+      this.docs[doc.plugin] = [];
     }
-    this.docs[doc.name].push(doc);
+    this.docs[doc.plugin].push(doc);
   }
 
   public async pull(): Promise<
@@ -19,6 +19,6 @@ export class MemoryLinker<
   }
 
   public async has(doc: AutoDocsTypes.LinkerObject<T>): Promise<boolean> {
-    return !!this.docs[doc.name];
+    return !!this.docs[doc.plugin];
   }
 }

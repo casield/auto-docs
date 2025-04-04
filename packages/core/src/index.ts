@@ -68,11 +68,10 @@ export class LambdaDocsBuilder<T extends AutoDocsTypes.AvailablePlugins> {
     }
     this._docs.link({
       data: docs,
-      name: type,
+      plugin: type,
       version:
         "version" in docs ? (docs as { version: string }).version : "0.0.0",
       description: "TODO",
-      type,
     });
 
     return this;

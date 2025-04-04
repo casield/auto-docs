@@ -1,14 +1,5 @@
 import Serverless from "serverless";
-import * as fs from "fs";
-import * as path from "path";
-import {
-  IOpenApiCommentBlockPath,
-  OpenApiDoc,
-  IOpenApiCommentBlockResponse,
-  parseSchemaString,
-} from "@auto-docs/openapi-plugin";
 import { LambdaDocsBuilder, parseComment } from "@auto-docs/core";
-import { LambdaFunctionAnalyzer } from "./analyze-function-v2";
 
 export * from "./dynamic";
 

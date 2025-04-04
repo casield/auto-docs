@@ -30,10 +30,9 @@ declare global {
     }
 
     export interface LinkerObject<T extends keyof Plugins> {
-      name: string;
+      plugin: AutoDocsTypes.AvailablePlugins;
       version: string;
       description: string;
-      type: AutoDocsTypes.AvailablePlugins;
       data: Plugins[T];
     }
 
