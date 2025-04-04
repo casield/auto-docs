@@ -3,8 +3,6 @@ import { Entity } from "electrodb";
 
 const client = new DynamoDB.DocumentClient();
 
-const table = process.env.TABLE_NAME;
-
 export const LinkerObjectEntity = new Entity(
   {
     model: {
@@ -44,5 +42,5 @@ export const LinkerObjectEntity = new Entity(
       },
     },
   },
-  { client, table }
+  { client }
 );

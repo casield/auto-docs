@@ -15,6 +15,7 @@ custom:
     description: "This is a test for the Serverless Framework Auto Docs plugin."
     version: "1.0.0"
     outputDir: "docs"
+    linkerTableName: dynamicDocs
 
 functions:
   hello:
@@ -30,3 +31,6 @@ functions:
       - httpApi:
           path: /bye
           method: post
+
+plugins:
+  - "@auto-docs/serverless"

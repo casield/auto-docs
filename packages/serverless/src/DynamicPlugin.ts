@@ -1,7 +1,7 @@
 import Serverless from "serverless";
 import { LambdaDocsBuilder, parseComment } from "@auto-docs/core";
-
-export * from "./dynamic";
+import { OpenApiDoc } from "@auto-docs/openapi-plugin";
+import { DynamoLinker } from "./DynamoLinker";
 
 interface Logger {
   info: (message: string) => void;
@@ -11,7 +11,7 @@ interface Logger {
   debug: (message: string) => void;
 }
 
-class ServerlessPlugin {
+export class ServerlessPlugin {
   serverless: Serverless;
   options: any;
   utils: {
@@ -43,7 +43,33 @@ class ServerlessPlugin {
     };
   }
 
-  init() {}
+  init() {
+    const customConfig =
+      this.serverless.service.custom &&
+      this.serverless.service.custom["auto-docs"]
+        ? this.serverless.service.custom["auto-docs"]
+        : {};
+
+    if (!customConfig.linkerTableName) {
+      this.utils.log.error(
+        "Linker table name is not provided in the custom configuration."
+      );
+      return;
+    }
+
+    this.builder = new LambdaDocsBuilder({
+      name: this.serverless.service.service || "Serverless Service",
+      description: "Serverless Service",
+      pluginConfig: {
+        openApi: {
+          outputDir: "docs",
+          version: "1.0.0",
+        },
+      },
+      plugins: [OpenApiDoc],
+      linker: new DynamoLinker(customConfig.linkerTableName),
+    });
+  }
 
   async beforeDeploy() {}
 
@@ -63,5 +89,3 @@ class ServerlessPlugin {
 
   async autoDocsBuild() {}
 }
-
-module.exports = ServerlessPlugin;

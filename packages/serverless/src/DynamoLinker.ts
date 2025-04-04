@@ -2,8 +2,10 @@ import { Linker } from "@auto-docs/core";
 import { LinkerObjectEntity } from "./electro";
 
 export class DynamoLinker extends Linker<AutoDocsTypes.AvailablePlugins> {
-  constructor() {
+  constructor(public tableName: string) {
     super();
+
+    LinkerObjectEntity.setTableName(tableName);
 
     this.init();
   }
