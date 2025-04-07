@@ -13,7 +13,8 @@
   "license": "ISC",
   "dependencies": {
     "jest": "^29.7.0",
-    "ts-jest": "^29.2.5"
+    "ts-jest": "^29.2.5",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.146",

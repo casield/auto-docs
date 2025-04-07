@@ -26,6 +26,17 @@ export const dynamicAutoDocs = <T extends "openApi">(
     );
 
     if (typeof response === "object" && response.statusCode) {
+      const http =
+        "http" in event.requestContext
+          ? (event.requestContext.http as {
+              method: string;
+              path: string;
+            })
+          : undefined;
+
+      if (!http) {
+        throw new Error("HTTP context not found in event");
+      }
       await builder.docs("openApi", {
         type: "response",
         name: "Test dynamic",
@@ -35,8 +46,8 @@ export const dynamicAutoDocs = <T extends "openApi">(
           description: "Test dynamic",
           contentType: "application/json",
           path: {
-            method: event.httpMethod,
-            path: event.path,
+            method: http.method,
+            path: http.path,
           },
           schema: createPropertiesFromBody(JSON.parse(response.body || "{}")),
         },
