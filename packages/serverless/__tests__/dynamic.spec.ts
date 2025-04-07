@@ -67,7 +67,5 @@ describe("Dynamic", () => {
     const result = await builder.run();
 
     expect(result.openApi).toBeDefined();
-
-    console.log("builder", JSON.stringify(result.openApi, null, 2));
   });
 });

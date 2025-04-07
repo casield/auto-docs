@@ -1,46 +1,44 @@
-import DynamoDB from "@aws-sdk/client-dynamodb";
 import { Entity } from "electrodb";
-
-const client = new DynamoDB.DynamoDBClient();
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 
 export const LinkerObjectEntity = new Entity(
   {
     model: {
       entity: "linkerObject",
       version: "1",
-      service: "store",
+      service: "auto-docs",
     },
     attributes: {
       plugin: {
         type: "string",
-        required: true,
       },
       version: {
         type: "string",
         required: true,
       },
-      description: {
+      name: {
         type: "string",
+        required: true,
       },
       data: {
         type: "any",
-        required: true,
       },
     },
     indexes: {
-      plugin: {
+      pk: {
         pk: {
-          // highlight-next-line
           field: "pk",
           composite: ["plugin"],
         },
         sk: {
-          // highlight-next-line
           field: "sk",
-          composite: ["version"],
+          composite: ["name", "version"],
         },
       },
     },
   },
-  { client }
+  {
+    table: "dynamicDocs",
+    client: new DynamoDBClient(),
+  }
 );

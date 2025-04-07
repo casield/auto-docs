@@ -66,12 +66,13 @@ export class LambdaDocsBuilder<T extends AutoDocsTypes.AvailablePlugins> {
     ) {
       throw new Error(`Plugin ${type} not found`);
     }
-    this._docs.link({
+    await this._docs.link({
       data: docs,
       plugin: type,
       version:
         "version" in docs ? (docs as { version: string }).version : "0.0.0",
       description: "TODO",
+      name: "name" in docs ? (docs as { name: string }).name : "Unknown",
     });
 
     return this;

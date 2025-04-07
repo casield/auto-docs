@@ -34,6 +34,7 @@ declare global {
       version: string;
       description: string;
       data: Plugins[T];
+      name: string;
     }
 
     export type AvailablePlugins = keyof Plugins;

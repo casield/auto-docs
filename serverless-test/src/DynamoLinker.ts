@@ -6,71 +6,51 @@ import {
   ScanCommand,
 } from "@aws-sdk/client-dynamodb";
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
+import { LinkerObjectEntity } from "./electro";
 
 export class DynamoLinker extends Linker<AutoDocsTypes.AvailablePlugins> {
-  private client: DynamoDBClient;
-
   constructor(public tableName: string) {
     super();
-    this.client = new DynamoDBClient({});
     this.init();
   }
 
   init() {}
 
   async link(doc: AutoDocsTypes.LinkerObject<"openApi">): Promise<void> {
-    console.log("linking", doc);
-    await this.client.send(
-      new PutItemCommand({
-        TableName: this.tableName,
-        Item: marshall(
-          {
-            pk: doc.plugin,
-            sk: doc.version,
-            description: doc.description,
-            data: doc.data,
-          },
-          { removeUndefinedValues: true }
-        ),
-      })
-    );
+    await LinkerObjectEntity.put({
+      plugin: doc.plugin,
+      version: doc.version,
+      name: doc.name,
+      data: doc.data,
+    }).go();
   }
 
   async pull(): Promise<
     Record<string, AutoDocsTypes.LinkerObject<"openApi">[]>
   > {
-    const result = await this.client.send(
-      new ScanCommand({
-        TableName: this.tableName,
-      })
-    );
-
-    return (result.Items || []).reduce((acc, item) => {
-      const unmarshalled = unmarshall(item);
-      const key = unmarshalled.pk as string;
-      if (!acc[key]) {
-        acc[key] = [];
-      }
-      acc[key].push({
-        plugin: unmarshalled.pk as AutoDocsTypes.AvailablePlugins,
-        version: unmarshalled.sk,
-        description: unmarshalled.description || "",
-        data: unmarshalled.data,
+    const result = await LinkerObjectEntity.query
+      .pk({ plugin: "openApi" })
+      .go()
+      .then((result) => {
+        return result.data.map((item) => {
+          return {
+            plugin: item.plugin as AutoDocsTypes.AvailablePlugins,
+            version: item.version,
+            name: item.name,
+            description: item.name,
+            data: item.data,
+          };
+        });
       });
-      return acc;
-    }, {} as Record<string, AutoDocsTypes.LinkerObject<"openApi">[]>);
+    return {
+      openApi: result,
+    };
   }
 
   async has(doc: AutoDocsTypes.LinkerObject<"openApi">): Promise<boolean> {
-    const result = await this.client.send(
-      new GetItemCommand({
-        TableName: this.tableName,
-        Key: marshall({
-          pk: doc.plugin,
-          sk: doc.version,
-        }),
-      })
-    );
-    return !!result.Item;
+    const result = await LinkerObjectEntity.query
+      .pk({ plugin: doc.plugin, name: doc.name, version: doc.version })
+      .go();
+    return result.data.length > 0;
   }
 }

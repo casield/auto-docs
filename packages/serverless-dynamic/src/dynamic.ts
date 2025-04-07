@@ -39,7 +39,7 @@ export const dynamicAutoDocs = <T extends "openApi">(
       }
       await builder.docs("openApi", {
         type: "response",
-        name: "Test dynamic",
+        name: [http.method, http.path].join(" "),
         version: "1.0.0",
         data: {
           statusCode: response.statusCode,

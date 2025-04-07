@@ -23,8 +23,10 @@ const helloBase = async (event: any) => {
    * @schema { message: string }
    */
   return {
-    message: "Go Serverless v1.0! Your function executed successfully!",
-    statusCode: 200,
+    body: JSON.stringify({
+      hello: "World",
+    }),
+    statusCode: 501,
   };
 };
 
