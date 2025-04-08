@@ -2,6 +2,7 @@ import { LambdaDocsBuilder } from "@auto-docs/core";
 import { OpenApiDoc } from "@auto-docs/openapi-plugin";
 import { APIGatewayEvent, APIGatewayProxyResultV2, Handler } from "aws-lambda";
 import { createHash } from "crypto";
+import { version } from "os";
 
 export const dynamicAutoDocs = <T extends "openApi">(
   handler: Handler<APIGatewayEvent, APIGatewayProxyResultV2>,
@@ -39,23 +40,30 @@ export const dynamicAutoDocs = <T extends "openApi">(
         throw new Error("HTTP context not found in event");
       }
 
-      const name = createHash("sha256")
-        .update(
-          `${[
-            http.method,
-            http.path,
-            Object.keys(JSON.parse(response.body || "{}")),
-            response.statusCode,
-          ].join(" ")}`,
-          "utf8"
-        )
-        .digest("hex");
+      const name = getHash([
+        http.method,
+        http.path,
+        Object.keys(JSON.parse(response.body || "{}")),
+        response.statusCode,
+      ]);
+
+      const aggregatedResponse = {
+        ...response,
+        version: (response as { version: string }).version || "0.0.0",
+      };
+
+      await builder.docs("openApi", {
+        type: "method",
+        name: `${http.method}-${http.path}`,
+        version: aggregatedResponse.version,
+        method: http.method as any,
+        path: http.path,
+      });
 
       await builder.docs("openApi", {
         type: "response",
         name,
-        version: (response as { version: string }).version,
-
+        version: aggregatedResponse.version,
         statusCode: response.statusCode,
         description: "Test dynamic",
         contentType: "application/json",
@@ -110,4 +118,8 @@ function createPropertiesFromBody(body: any) {
     properties,
   };
   return schema;
+}
+
+function getHash<T>(data: T[]) {
+  return createHash("sha256").update(data.join(" "), "utf8").digest("hex");
 }

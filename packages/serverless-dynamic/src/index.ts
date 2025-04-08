@@ -2,6 +2,7 @@ import { LambdaDocsBuilder } from "@auto-docs/core";
 import { OpenApiDoc } from "@auto-docs/openapi-plugin";
 import Serverless from "serverless";
 import { DynamoLinker } from "./DynamoLinker";
+import { version } from "os";
 
 export * from "./dynamic";
 export * from "./DynamoLinker";
@@ -10,8 +11,14 @@ interface Logger {
   info: (message: string) => void;
   error: (message: string) => void;
   warn: (message: string) => void;
-  success: (message: string) => void;
   debug: (message: string) => void;
+  notice: (message: string) => void;
+}
+
+interface Progress {
+  start: (message: string) => void;
+  update: (message: string) => void;
+  stop: () => void;
 }
 
 class ServerlessPlugin {
@@ -19,12 +26,22 @@ class ServerlessPlugin {
   options: any;
   utils: {
     log: Logger;
+    writeText: (text: string) => void;
+    progress: Progress;
   };
   hooks: { [key: string]: Function };
   commands: { [key: string]: any };
   builder: LambdaDocsBuilder<"openApi"> | undefined;
 
-  constructor(serverless: Serverless, options: any, utils: { log: Logger }) {
+  constructor(
+    serverless: Serverless,
+    options: any,
+    utils: {
+      log: Logger;
+      writeText: (text: string) => void;
+      progress: Progress;
+    }
+  ) {
     this.serverless = serverless;
     this.options = options;
     this.utils = utils;
@@ -91,15 +108,47 @@ class ServerlessPlugin {
   afterDeploy() {}
 
   async autoDocsBuild() {
-    this.getApiGatewayEvents(this.serverless.service.functions as any).forEach(
-      (event) => {
-        if (event) {
+    const promises = Object.values(this.serverless.service.functions).map(
+      (fn) => {
+        const events = this.getApiGatewayEvents(fn);
+        if (events.length > 0) {
+          return events.map(async (event) => {
+            const method = event?.method.toLowerCase();
+            const path = event?.path.toLowerCase();
+
+            if (!method || !path) {
+              this.utils.log.error(
+                `Invalid method or path for function ${fn.name}`
+              );
+              return;
+            }
+            this.utils.log.info(
+              `Generating documentation for ${
+                fn.name
+              } - ${method?.toUpperCase()} ${path}`
+            );
+
+            await this.builder?.docs("openApi", {
+              method: method as AutoDocsTypes.IDocsOpenApiMethod["method"],
+              path,
+              type: "method",
+              name: `${fn.name}-${method}-${path}`,
+              version: "0.0.0",
+              description: `Auto-generated documentation for ${
+                fn.name
+              } - ${method?.toUpperCase()} ${path}`,
+            });
+          });
+        } else {
           this.utils.log.info(
-            `Auto-generating documentation for ${event.method} ${event.path}`
+            `No API Gateway event found for function ${fn.name}`
           );
         }
       }
     );
+
+    await Promise.all(promises);
+    this.utils.log.info("Auto docs build completed.");
   }
 }
 
