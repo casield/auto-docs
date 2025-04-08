@@ -1,6 +1,6 @@
 {
   "name": "@auto-docs/serverless-dynamic",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -12,8 +12,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@auto-docs/core": "1.0.1",
-    "@auto-docs/openapi-plugin": "1.0.1",
+    "@auto-docs/core": "1.1.0",
+    "@auto-docs/openapi-plugin": "1.1.0",
     "@types/aws-lambda": "^8.10.148",
     "jest": "^29.7.0",
     "serverless": "^4.4.15",

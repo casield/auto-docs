@@ -1,6 +1,6 @@
 {
   "name": "@auto-docs/serverless",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -10,8 +10,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@auto-docs/core": "1.0.1",
-    "@auto-docs/openapi-plugin": "1.0.1",
+    "@auto-docs/core": "1.1.0",
+    "@auto-docs/openapi-plugin": "1.1.0",
     "@babel/generator": "^7.26.3",
     "@babel/parser": "^7.26.3",
     "@babel/traverse": "^7.26.4",
