@@ -1,7 +1,6 @@
 import Serverless from "serverless";
 import { LambdaDocsBuilder, parseComment } from "@auto-docs/core";
 import { OpenApiDoc } from "@auto-docs/openapi-plugin";
-import { DynamoLinker } from "./DynamoLinker";
 
 interface Logger {
   info: (message: string) => void;
@@ -67,7 +66,6 @@ export class ServerlessPlugin {
         },
       },
       plugins: [OpenApiDoc],
-      linker: new DynamoLinker(customConfig.linkerTableName),
     });
   }
 

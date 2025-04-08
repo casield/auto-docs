@@ -41,5 +41,6 @@ functions:
       - httpApi:
           path: /bye
           method: post
-# plugins:
-#   - "@auto-docs/serverless-dynamic"
+
+plugins:
+  - "@auto-docs/serverless-dynamic"

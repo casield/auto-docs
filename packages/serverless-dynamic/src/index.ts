@@ -14,7 +14,7 @@ interface Logger {
   debug: (message: string) => void;
 }
 
-export default class ServerlessPlugin {
+class ServerlessPlugin {
   serverless: Serverless;
   options: any;
   utils: {
@@ -90,5 +90,17 @@ export default class ServerlessPlugin {
 
   afterDeploy() {}
 
-  async autoDocsBuild() {}
+  async autoDocsBuild() {
+    this.getApiGatewayEvents(this.serverless.service.functions as any).forEach(
+      (event) => {
+        if (event) {
+          this.utils.log.info(
+            `Auto-generating documentation for ${event.method} ${event.path}`
+          );
+        }
+      }
+    );
+  }
 }
+
+export default ServerlessPlugin;

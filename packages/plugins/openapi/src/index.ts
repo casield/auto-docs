@@ -29,7 +29,7 @@ export class OpenApiDoc extends AutoDocsPlugin<"openApi"> {
 
     docs.forEach((doc) => {
       if (doc.type === "method") {
-        const { path, method, summary, description, tags } = doc.data;
+        const { path, method, summary, description, tags } = doc;
         if (!spec.paths[path]) {
           spec.paths[path] = {};
         }
@@ -40,7 +40,7 @@ export class OpenApiDoc extends AutoDocsPlugin<"openApi"> {
           responses: {},
         };
       } else if (doc.type === "response") {
-        const { statusCode, description, contentType, schema, path } = doc.data;
+        const { statusCode, description, contentType, schema, path } = doc;
         const typedPath = path.path as keyof typeof spec.paths;
         const typedMethod =
           path.method as keyof (typeof spec.paths)[typeof typedPath];
