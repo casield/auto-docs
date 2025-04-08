@@ -91,7 +91,9 @@ class ServerlessPlugin {
     });
   }
 
-  async beforeDeploy() {}
+  async beforeDeploy() {
+    await this.autoDocsBuild();
+  }
 
   getApiGatewayEvents(
     fn:
@@ -105,9 +107,10 @@ class ServerlessPlugin {
     );
   }
 
-  afterDeploy() {}
+  async afterDeploy() {}
 
   async autoDocsBuild() {
+    console.log("pro", process.env);
     const promises = Object.values(this.serverless.service.functions).map(
       (fn) => {
         const events = this.getApiGatewayEvents(fn);

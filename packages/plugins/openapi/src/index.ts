@@ -1,6 +1,7 @@
 import "./global-types";
 import "./open-api";
 import { AutoDocsPlugin, LambdaDocsBuilder } from "@auto-docs/core";
+import fs from "fs";
 
 export * from "./types";
 export * from "./utils";
@@ -77,7 +78,23 @@ export class OpenApiDoc extends AutoDocsPlugin<"openApi"> {
       }
     });
 
+    this.saveSpec(
+      spec,
+      builder.config.pluginConfig?.openApi.outputDir || "docs"
+    );
+
     return spec as unknown as C;
   }
+  saveSpec(spec: AutoDocsTypes.OpenAPISpec, outputDir: string): void {
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir);
+    }
+
+    fs.writeFileSync(
+      `${outputDir}/openapi.json`,
+      JSON.stringify(spec, null, 2)
+    );
+  }
+  onStart(builder: LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins>): void {}
   onEnd(builder: LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins>): void {}
 }
