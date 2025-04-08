@@ -4,7 +4,8 @@
     "outDir": "./dist",
     "declarationDir": "./dist/declarations",
     "declaration": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "downlevelIteration": true
   },
   "include": ["src"]
 }

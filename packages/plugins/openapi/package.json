@@ -1,17 +1,20 @@
 {
   "name": "@auto-docs/openapi-plugin",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "",
   "main": "dist/index.js",
-  "types": "dist/declarations/index.d.ts",
+  "types": "dist/index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc"
+    "build": "tsup"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@auto-docs/core": "1.0.1"
+    "@auto-docs/core": "1.1.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.4.0"
   },
   "publishConfig": {
     "access": "public"

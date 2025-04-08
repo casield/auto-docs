@@ -11,11 +11,30 @@ declare global {
 
     export interface PluginConfig {}
 
+    export interface PluginResponse {}
+
+    export interface ILinker<T extends keyof Plugins> {
+      link(doc: AutoDocsTypes.LinkerObject<T>): Promise<void>;
+
+      pull(): Promise<Record<string, AutoDocsTypes.LinkerObject<T>[]>>;
+
+      has(doc: AutoDocsTypes.LinkerObject<T>): Promise<boolean>;
+    }
+
     export interface AutoDocsConfig<T extends keyof Plugins> {
       name: string;
       description: string;
       plugins: (typeof AutoDocsPlugin<T>)[];
       pluginConfig?: PluginConfig;
+      linker?: ILinker<T>;
+    }
+
+    export interface LinkerObject<T extends keyof Plugins> {
+      plugin: AutoDocsTypes.AvailablePlugins;
+      version: string;
+      description: string;
+      data: Plugins[T];
+      name: string;
     }
 
     export type AvailablePlugins = keyof Plugins;

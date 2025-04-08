@@ -8,6 +8,14 @@ service: serverless-test
 provider:
   name: aws
   runtime: nodejs20.x
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:*
+          Resource:
+            - arn:aws:dynamodb:us-east-1:435461726783:table/dynamicDocs
 
 custom:
   auto-docs:
@@ -15,6 +23,7 @@ custom:
     description: "This is a test for the Serverless Framework Auto Docs plugin."
     version: "1.0.0"
     outputDir: "docs"
+    linkerRoute: https://7lqn0bxcch.execute-api.us-east-1.amazonaws.com/proxy
 
 functions:
   hello:
@@ -31,5 +40,14 @@ functions:
           path: /bye
           method: post
 
+  proxy:
+    handler: src/handlers/handler.proxy
+    events:
+      - httpApi:
+          path: /proxy/{proxy+}
+          method: any
+    environment:
+      LINKER_TABLE_NAME: dynamicDocs
+
 plugins:
-  - "@auto-docs/serverless"
+  - "@auto-docs/serverless-dynamic"

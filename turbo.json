@@ -5,6 +5,11 @@
       "outputs": ["dist/**"],
       "dependsOn": ["^build"],
       "inputs": ["!packages/static-site/**", "**/*"]
+    },
+    "dev": {
+      "cache": false,
+      "dependsOn": ["^dev"],
+      "inputs": ["!packages/static-site/**", "**/*"]
     }
   }
 }

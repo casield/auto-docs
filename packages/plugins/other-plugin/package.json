@@ -1,6 +1,6 @@
 {
   "name": "@auto-docs/other-plugin",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/declarations/index.d.ts",
@@ -11,7 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@auto-docs/core": "1.0.1"
+    "@auto-docs/core": "1.1.0"
   },
   "publishConfig": {
     "access": "public"

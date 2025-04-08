@@ -2,17 +2,50 @@ import "@auto-docs/core";
 
 declare global {
   export namespace AutoDocsTypes {
-    export interface IDocsOpenApi extends IDocs {
-      method: "get" | "post" | "put" | "delete" | "patch" | "options" | "head";
+    export type OpenApiMethods =
+      | "get"
+      | "post"
+      | "put"
+      | "delete"
+      | "patch"
+      | "options"
+      | "head";
+
+    export interface IDocsOpenApiMethod extends IDocs {
+      type: "method";
+
+      path: {
+        method: OpenApiMethods;
+        path: string;
+      };
       summary?: string;
       description?: string;
       tags?: string[];
-      responses?: ResponsesObject;
-      path: string;
+    }
+    export interface IDocsOpenApiResponse extends IDocs {
+      type: "response";
+
+      statusCode: number;
+      path: {
+        method: OpenApiMethods;
+        path: string;
+      };
+      description?: string;
+      contentType?: string;
+      schema?: SchemaObject | ReferenceObject;
+      schemaName?: string;
     }
 
     export interface Plugins {
-      openApi: IDocsOpenApi;
+      openApi: IDocsOpenApiMethod | IDocsOpenApiResponse;
+    }
+
+    export interface PluginResponse {
+      openApi: {
+        spec: OpenAPISpec;
+        outputDir: string;
+        version: string;
+      };
     }
 
     export interface PluginConfig {
