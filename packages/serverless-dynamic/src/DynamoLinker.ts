@@ -10,7 +10,9 @@ export class DynamoLinker extends Linker<AutoDocsTypes.AvailablePlugins> {
 
   init() {}
 
-  async link(doc: AutoDocsTypes.LinkerObject<"openApi">): Promise<void> {
+  async link(
+    doc: AutoDocsTypes.LinkerObject<AutoDocsTypes.AvailablePlugins>
+  ): Promise<void> {
     await LinkerObjectEntity.put({
       plugin: doc.plugin,
       version: doc.version,
@@ -20,7 +22,7 @@ export class DynamoLinker extends Linker<AutoDocsTypes.AvailablePlugins> {
   }
 
   async pull(): Promise<
-    Record<string, AutoDocsTypes.LinkerObject<"openApi">[]>
+    Record<string, AutoDocsTypes.LinkerObject<AutoDocsTypes.AvailablePlugins>[]>
   > {
     const result = await LinkerObjectEntity.query
       .pk({ plugin: "openApi" })
@@ -41,7 +43,9 @@ export class DynamoLinker extends Linker<AutoDocsTypes.AvailablePlugins> {
     };
   }
 
-  async has(doc: AutoDocsTypes.LinkerObject<"openApi">): Promise<boolean> {
+  async has(
+    doc: AutoDocsTypes.LinkerObject<AutoDocsTypes.AvailablePlugins>
+  ): Promise<boolean> {
     const result = await LinkerObjectEntity.query
       .pk({ plugin: doc.plugin, name: doc.name, version: doc.version })
       .go();

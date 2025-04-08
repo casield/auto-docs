@@ -1,73 +1,22 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "Serverless Test",
+    "title": "serverless-test",
     "version": "1.0.0",
-    "description": "This is a test for the Serverless Framework Auto Docs plugin."
-  },
-  "components": {
-    "schemas": {}
+    "description": "Serverless Service"
   },
   "paths": {
     "/hello": {
-      "get": {
-        "summary": "This is a test function. The endpoint is /hello.",
+      "GET": {
         "responses": {
-          "201": {
-            "description": "The return response is a User object or a message.",
+          "200": {
+            "description": "Test dynamic",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "message": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "The description of otherImport",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/User"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "This is another return object",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/bye": {
-      "get": {
-        "summary": "This is a test function. The endpoint is /bye.",
-        "responses": {
-          "201": {
-            "description": "The return response is a message.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
+                    "hello": {
                       "type": "string"
                     }
                   }

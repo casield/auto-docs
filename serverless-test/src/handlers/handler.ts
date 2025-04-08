@@ -60,3 +60,5 @@ export const bye = async (event: any) => {
     message: "Goodbye!",
   };
 };
+
+export const proxy = Dynamic.lambdaProxy();

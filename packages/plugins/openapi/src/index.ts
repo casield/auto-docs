@@ -28,6 +28,8 @@ export class OpenApiDoc extends AutoDocsPlugin<"openApi"> {
       paths: {},
     };
 
+    docs.sort((e) => (e.type === "method" ? -1 : 1));
+
     docs.forEach((doc) => {
       if (doc.type === "method") {
         const { path, method, summary, description, tags } = doc;

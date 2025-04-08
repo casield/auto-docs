@@ -2,10 +2,11 @@ import { LambdaDocsBuilder } from "@auto-docs/core";
 import { OpenApiDoc } from "@auto-docs/openapi-plugin";
 import Serverless from "serverless";
 import { DynamoLinker } from "./DynamoLinker";
-import { version } from "os";
+import { DynamicProxyLinker } from "./proxy";
 
 export * from "./dynamic";
 export * from "./DynamoLinker";
+export * from "./proxy";
 
 interface Logger {
   info: (message: string) => void;
@@ -70,9 +71,9 @@ class ServerlessPlugin {
         ? this.serverless.service.custom["auto-docs"]
         : {};
 
-    if (!customConfig.linkerTableName) {
+    if (!customConfig.linkerRoute) {
       this.utils.log.error(
-        "Linker table name is not provided in the custom configuration."
+        "linkerRoute is not provided in the custom configuration."
       );
       return;
     }
@@ -86,14 +87,12 @@ class ServerlessPlugin {
           version: "1.0.0",
         },
       },
-      linker: new DynamoLinker(customConfig.linkerTableName),
+      linker: new DynamicProxyLinker(customConfig.linkerRoute),
       plugins: [OpenApiDoc],
     });
   }
 
-  async beforeDeploy() {
-    await this.autoDocsBuild();
-  }
+  async beforeDeploy() {}
 
   getApiGatewayEvents(
     fn:
@@ -110,8 +109,7 @@ class ServerlessPlugin {
   async afterDeploy() {}
 
   async autoDocsBuild() {
-    console.log("pro", process.env);
-    const promises = Object.values(this.serverless.service.functions).map(
+    /* const promises = Object.values(this.serverless.service.functions).map(
       (fn) => {
         const events = this.getApiGatewayEvents(fn);
         if (events.length > 0) {
@@ -148,9 +146,11 @@ class ServerlessPlugin {
           );
         }
       }
-    );
+    ); 
 
-    await Promise.all(promises);
+    await Promise.all(promises); */
+
+    await this.builder?.run();
     this.utils.log.info("Auto docs build completed.");
   }
 }
