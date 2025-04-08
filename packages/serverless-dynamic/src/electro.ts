@@ -38,6 +38,6 @@ export const LinkerObjectEntity = new Entity(
     },
   },
   {
-    client: new DynamoDBClient(),
+    client: new DynamoDBClient({}),
   }
 );

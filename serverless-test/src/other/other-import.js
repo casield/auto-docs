@@ -31,6 +31,7 @@ class MyClass {
   async myMethod() {
     const my = {
       statusCode: 200,
+      schema: "com.drokt.User",
       body: JSON.stringify({
         userId: "123",
       }),

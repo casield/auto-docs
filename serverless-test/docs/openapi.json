@@ -19,13 +19,7 @@
                       "$ref": "#/components/schemas/com.drokt.HelloMessage"
                     },
                     {
-                      "type": "object",
-                      "properties": {
-                        "userId": {
-                          "type": "string"
-                        }
-                      },
-                      "description": "Test dynamic"
+                      "$ref": "#/components/schemas/com.drokt.User"
                     }
                   ]
                 }
@@ -42,6 +36,14 @@
         "type": "object",
         "properties": {
           "hello": {
+            "type": "string"
+          }
+        }
+      },
+      "com.drokt.User": {
+        "type": "object",
+        "properties": {
+          "userId": {
             "type": "string"
           }
         }

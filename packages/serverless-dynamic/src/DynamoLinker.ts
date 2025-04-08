@@ -17,7 +17,7 @@ export class DynamoLinker extends Linker<AutoDocsTypes.AvailablePlugins> {
       plugin: doc.plugin,
       version: doc.version,
       name: doc.name,
-      data: doc.data,
+      data: JSON.parse(JSON.stringify(doc.data)),
     }).go();
   }
 
