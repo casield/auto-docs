@@ -70,17 +70,25 @@ export class OpenApiDoc extends AutoDocsPlugin<"openApi"> {
         );
       }
 
-      const contentTypeGroups: Record<string, any[]> = {};
+      const contentTypeGroups: Record<
+        string,
+        (AutoDocsTypes.ReferenceObject | AutoDocsTypes.SchemaObject)[]
+      > = {};
 
       for (const response of responses) {
         const contentType = response.contentType || "application/json";
         if (!contentTypeGroups[contentType]) {
           contentTypeGroups[contentType] = [];
         }
-        contentTypeGroups[contentType].push(response.schema);
+        if (response.schema) {
+          contentTypeGroups[contentType].push(response.schema);
+        }
       }
 
-      const content: Record<string, any> = {};
+      const content: Record<
+        string,
+        { schema: AutoDocsTypes.SchemaObject | AutoDocsTypes.ReferenceObject }
+      > = {};
       for (const [contentType, schemas] of Object.entries(contentTypeGroups)) {
         if (schemas.length === 1) {
           content[contentType] = { schema: schemas[0] };
