@@ -32,7 +32,7 @@ class ServerlessPlugin {
   };
   hooks: { [key: string]: Function };
   commands: { [key: string]: any };
-  builder: LambdaDocsBuilder<"openApi"> | undefined;
+  builder: LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins> | undefined;
 
   constructor(
     serverless: Serverless,
@@ -109,49 +109,8 @@ class ServerlessPlugin {
   async afterDeploy() {}
 
   async autoDocsBuild() {
-    /* const promises = Object.values(this.serverless.service.functions).map(
-      (fn) => {
-        const events = this.getApiGatewayEvents(fn);
-        if (events.length > 0) {
-          return events.map(async (event) => {
-            const method = event?.method.toLowerCase();
-            const path = event?.path.toLowerCase();
-
-            if (!method || !path) {
-              this.utils.log.error(
-                `Invalid method or path for function ${fn.name}`
-              );
-              return;
-            }
-            this.utils.log.info(
-              `Generating documentation for ${
-                fn.name
-              } - ${method?.toUpperCase()} ${path}`
-            );
-
-            await this.builder?.docs("openApi", {
-              method: method as AutoDocsTypes.IDocsOpenApiMethod["method"],
-              path,
-              type: "method",
-              name: `${fn.name}-${method}-${path}`,
-              version: "0.0.0",
-              description: `Auto-generated documentation for ${
-                fn.name
-              } - ${method?.toUpperCase()} ${path}`,
-            });
-          });
-        } else {
-          this.utils.log.info(
-            `No API Gateway event found for function ${fn.name}`
-          );
-        }
-      }
-    ); 
-
-    await Promise.all(promises); */
-
     await this.builder?.run();
-    this.utils.log.info("Auto docs build completed.");
+    this.utils.log.notice("Auto docs build completed.");
   }
 }
 

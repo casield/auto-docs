@@ -10,7 +10,7 @@
       "GET": {
         "responses": {
           "200": {
-            "description": "Test dynamic",
+            "description": "Wow this is so cool!",
             "content": {
               "application/json": {
                 "schema": {

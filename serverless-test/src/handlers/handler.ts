@@ -19,6 +19,7 @@ const helloBase = async (event: any) => {
     body: JSON.stringify({
       hello: "World",
     }),
+    description: "Wow this is so cool!",
     statusCode: 200,
   };
 };

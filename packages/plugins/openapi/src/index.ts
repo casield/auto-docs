@@ -18,94 +18,12 @@ export class OpenApiDoc extends AutoDocsPlugin<"openApi"> {
     )[],
     builder: LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins>
   ) {
-    const spec: AutoDocsTypes.OpenAPISpec = {
-      openapi: "3.0.0",
-      info: {
-        title: builder.config.name,
-        version: builder.config.pluginConfig?.openApi.version || "1.0.0",
-        description: builder.config.description,
-      },
-      paths: {},
-    };
+    const spec = this.createBaseSpec(builder);
 
-    docs.sort((e) => (e.type === "method" ? -1 : 1));
+    const [methods, responses] = this.partitionDocs(docs);
 
-    const responseMap = new Map<string, AutoDocsTypes.IDocsOpenApiResponse[]>();
-
-    docs.forEach((doc) => {
-      if (doc.type === "method") {
-        const { path, method, summary, description, tags } = doc;
-        if (!spec.paths[path]) {
-          spec.paths[path] = {};
-        }
-        spec.paths[path][method] = {
-          summary,
-          description,
-          tags,
-          responses: {},
-        };
-      } else if (doc.type === "response") {
-        const key = `${doc.path.path}::${doc.path.method}::${doc.statusCode}`;
-        if (!responseMap.has(key)) {
-          responseMap.set(key, []);
-        }
-        responseMap.get(key)?.push(doc);
-      }
-    });
-
-    for (const [key, responses] of responseMap.entries()) {
-      const [path, method, statusCode] = key.split("::");
-      const typedPath = path as keyof typeof spec.paths;
-      const typedMethod = method as keyof (typeof spec.paths)[typeof typedPath];
-
-      const pathResolved = spec.paths[typedPath]?.[typedMethod];
-
-      if (
-        !pathResolved ||
-        typeof pathResolved !== "object" ||
-        !("responses" in pathResolved)
-      ) {
-        throw new Error(
-          `Path ${typedPath} with method ${typedMethod} does not have a responses object.`
-        );
-      }
-
-      const contentTypeGroups: Record<
-        string,
-        (AutoDocsTypes.ReferenceObject | AutoDocsTypes.SchemaObject)[]
-      > = {};
-
-      for (const response of responses) {
-        const contentType = response.contentType || "application/json";
-        if (!contentTypeGroups[contentType]) {
-          contentTypeGroups[contentType] = [];
-        }
-        if (response.schema) {
-          contentTypeGroups[contentType].push(response.schema);
-        }
-      }
-
-      const content: Record<
-        string,
-        { schema: AutoDocsTypes.SchemaObject | AutoDocsTypes.ReferenceObject }
-      > = {};
-      for (const [contentType, schemas] of Object.entries(contentTypeGroups)) {
-        if (schemas.length === 1) {
-          content[contentType] = { schema: schemas[0] };
-        } else {
-          content[contentType] = {
-            schema: { anyOf: schemas },
-          };
-        }
-      }
-
-      pathResolved.responses[statusCode] = {
-        description:
-          responses.find((r) => r.description)?.description ||
-          "No description provided",
-        content,
-      };
-    }
+    this.buildPaths(spec, methods);
+    this.buildGroupedResponses(spec, responses);
 
     this.saveSpec(
       spec,
@@ -115,7 +33,143 @@ export class OpenApiDoc extends AutoDocsPlugin<"openApi"> {
     return spec as unknown as C;
   }
 
-  saveSpec(spec: AutoDocsTypes.OpenAPISpec, outputDir: string): void {
+  private createBaseSpec(
+    builder: LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins>
+  ): AutoDocsTypes.OpenAPISpec {
+    return {
+      openapi: "3.0.0",
+      info: {
+        title: builder.config.name,
+        version: builder.config.pluginConfig?.openApi.version || "1.0.0",
+        description: builder.config.description,
+      },
+      paths: {},
+    };
+  }
+
+  private partitionDocs(
+    docs: (
+      | AutoDocsTypes.IDocsOpenApiMethod
+      | AutoDocsTypes.IDocsOpenApiResponse
+    )[]
+  ): [
+    AutoDocsTypes.IDocsOpenApiMethod[],
+    AutoDocsTypes.IDocsOpenApiResponse[]
+  ] {
+    const methods: AutoDocsTypes.IDocsOpenApiMethod[] = [];
+    const responses: AutoDocsTypes.IDocsOpenApiResponse[] = [];
+
+    for (const doc of docs) {
+      if (doc.type === "method") methods.push(doc);
+      else responses.push(doc);
+    }
+
+    return [methods, responses];
+  }
+
+  private buildPaths(
+    spec: AutoDocsTypes.OpenAPISpec,
+    methods: AutoDocsTypes.IDocsOpenApiMethod[]
+  ) {
+    for (const { path, method, summary, description, tags } of methods) {
+      if (!spec.paths[path]) spec.paths[path] = {};
+      spec.paths[path][method] = {
+        summary,
+        description,
+        tags,
+        responses: {},
+      };
+    }
+  }
+
+  private buildGroupedResponses(
+    spec: AutoDocsTypes.OpenAPISpec,
+    responses: AutoDocsTypes.IDocsOpenApiResponse[]
+  ) {
+    const responseMap = this.groupResponses(responses);
+
+    for (const [key, responseList] of responseMap.entries()) {
+      const [path, method, statusCode] = key.split("::");
+      const methodEntry =
+        spec.paths[path]?.[
+          method as AutoDocsTypes.IDocsOpenApiMethod["method"]
+        ];
+
+      if (
+        !methodEntry ||
+        typeof methodEntry !== "object" ||
+        !methodEntry.responses
+      ) {
+        throw new Error(
+          `Path "${path}" with method "${method}" does not have a valid responses object.`
+        );
+      }
+
+      const content = this.buildContent(responseList);
+      const description =
+        responseList.find((r) => r.description)?.description ||
+        "No description provided";
+
+      methodEntry.responses[statusCode] = {
+        description,
+        content,
+      };
+    }
+  }
+
+  private groupResponses(
+    responses: AutoDocsTypes.IDocsOpenApiResponse[]
+  ): Map<string, AutoDocsTypes.IDocsOpenApiResponse[]> {
+    const map = new Map<string, AutoDocsTypes.IDocsOpenApiResponse[]>();
+
+    for (const res of responses) {
+      const key = `${res.path.path}::${res.path.method}::${res.statusCode}`;
+      if (!map.has(key)) {
+        map.set(key, []);
+      }
+      map.get(key)!.push(res);
+    }
+
+    return map;
+  }
+
+  private buildContent(responses: AutoDocsTypes.IDocsOpenApiResponse[]): Record<
+    string,
+    {
+      schema: AutoDocsTypes.SchemaObject | AutoDocsTypes.ReferenceObject;
+    }
+  > {
+    const contentGroups: Record<
+      string,
+      (AutoDocsTypes.SchemaObject | AutoDocsTypes.ReferenceObject)[]
+    > = {};
+
+    for (const res of responses) {
+      const type = res.contentType || "application/json";
+      if (!res.schema) continue;
+
+      if (!contentGroups[type]) contentGroups[type] = [];
+      contentGroups[type].push(res.schema);
+    }
+
+    const content: Record<
+      string,
+      {
+        schema: AutoDocsTypes.SchemaObject | AutoDocsTypes.ReferenceObject;
+      }
+    > = {};
+
+    for (const [type, schemas] of Object.entries(contentGroups)) {
+      content[type] =
+        schemas.length === 1
+          ? { schema: schemas[0] }
+          : { schema: { anyOf: schemas } };
+    }
+
+    return content;
+  }
+
+  private saveSpec(spec: AutoDocsTypes.OpenAPISpec, outputDir: string): void {
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir);
     }
@@ -125,6 +179,7 @@ export class OpenApiDoc extends AutoDocsPlugin<"openApi"> {
       JSON.stringify(spec, null, 2)
     );
   }
+
   onStart(builder: LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins>): void {}
   onEnd(builder: LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins>): void {}
 }
