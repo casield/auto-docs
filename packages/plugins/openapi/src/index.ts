@@ -25,6 +25,8 @@ export class OpenApiDoc extends AutoDocsPlugin<"openApi"> {
     this.buildPaths(spec, methods);
     this.buildGroupedResponses(spec, responses);
 
+    this.registerComponentSchemas(spec, responses);
+
     this.saveSpec(
       spec,
       builder.config.pluginConfig?.openApi.outputDir || "docs"
@@ -148,6 +150,14 @@ export class OpenApiDoc extends AutoDocsPlugin<"openApi"> {
       const type = res.contentType || "application/json";
       if (!res.schema) continue;
 
+      if (res.schemaName) {
+        if (!contentGroups[type]) contentGroups[type] = [];
+        contentGroups[type].push({
+          $ref: `#/components/schemas/${res.schemaName}`,
+        });
+        continue;
+      }
+
       const schemaWithDescription =
         res.description && !("$ref" in res.schema)
           ? { ...res.schema, description: res.description }
@@ -172,6 +182,19 @@ export class OpenApiDoc extends AutoDocsPlugin<"openApi"> {
     }
 
     return content;
+  }
+
+  private registerComponentSchemas(
+    spec: AutoDocsTypes.OpenAPISpec,
+    responses: AutoDocsTypes.IDocsOpenApiResponse[]
+  ) {
+    for (const res of responses) {
+      if (res.schemaName && res.schema && !("$ref" in res.schema)) {
+        if (!spec.components) spec.components = {};
+        if (!spec.components.schemas) spec.components.schemas = {};
+        spec.components.schemas[res.schemaName] = res.schema;
+      }
+    }
   }
 
   private saveSpec(spec: AutoDocsTypes.OpenAPISpec, outputDir: string): void {

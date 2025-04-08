@@ -21,6 +21,7 @@ declare global {
       description?: string;
       contentType?: string;
       schema?: SchemaObject | ReferenceObject;
+      schemaName?: string;
     }
 
     export interface Plugins {

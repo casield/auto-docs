@@ -20,6 +20,7 @@ const helloBase = async (event: any) => {
       hello: "World",
     }),
     description: "Wow this is so cool!",
+    schema: "com.drokt.HelloMessage",
     statusCode: 200,
   };
 };

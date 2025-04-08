@@ -16,13 +16,7 @@
                 "schema": {
                   "anyOf": [
                     {
-                      "type": "object",
-                      "properties": {
-                        "hello": {
-                          "type": "string"
-                        }
-                      },
-                      "description": "Wow this is so cool!"
+                      "$ref": "#/components/schemas/com.drokt.HelloMessage"
                     },
                     {
                       "type": "object",
@@ -37,6 +31,18 @@
                 }
               }
             }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "com.drokt.HelloMessage": {
+        "type": "object",
+        "properties": {
+          "hello": {
+            "type": "string"
           }
         }
       }

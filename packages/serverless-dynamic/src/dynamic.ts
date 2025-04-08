@@ -49,6 +49,11 @@ export const dynamicAutoDocs = <T extends "openApi">(
         ...response,
         version: (response as { version: string }).version || "0.0.0",
         description: (response as { description: string }).description,
+        schema: (
+          response as {
+            schema: string;
+          }
+        ).schema,
       };
 
       await builder.docs("openApi", {
@@ -71,12 +76,19 @@ export const dynamicAutoDocs = <T extends "openApi">(
           path: http.path,
         },
         schema: createPropertiesFromBody(JSON.parse(response.body || "{}")),
+        schemaName: aggregatedResponse.schema,
       });
     }
 
     return response;
   };
 };
+
+function isReferenceObject(
+  obj: AutoDocsTypes.SchemaObject | AutoDocsTypes.ReferenceObject
+): obj is AutoDocsTypes.ReferenceObject {
+  return "$ref" in obj;
+}
 
 function createPropertiesFromBody(body: any) {
   const properties: Record<
