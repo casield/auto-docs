@@ -1,8 +1,6 @@
 import { LambdaDocsBuilder } from "@auto-docs/core";
-import { OpenApiDoc } from "@auto-docs/openapi-plugin";
 import { APIGatewayEvent, APIGatewayProxyResultV2, Handler } from "aws-lambda";
 import { createHash } from "crypto";
-import { version } from "os";
 
 export const dynamicAutoDocs = <T extends "openApi">(
   handler: Handler<APIGatewayEvent, APIGatewayProxyResultV2>,
@@ -50,6 +48,7 @@ export const dynamicAutoDocs = <T extends "openApi">(
       const aggregatedResponse = {
         ...response,
         version: (response as { version: string }).version || "0.0.0",
+        description: (response as { description: string }).description,
       };
 
       await builder.docs("openApi", {
@@ -65,7 +64,7 @@ export const dynamicAutoDocs = <T extends "openApi">(
         name,
         version: aggregatedResponse.version,
         statusCode: response.statusCode,
-        description: "Test dynamic",
+        description: aggregatedResponse.description,
         contentType: "application/json",
         path: {
           method: http.method,

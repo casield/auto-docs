@@ -30,6 +30,8 @@ export class OpenApiDoc extends AutoDocsPlugin<"openApi"> {
 
     docs.sort((e) => (e.type === "method" ? -1 : 1));
 
+    const responseMap = new Map<string, AutoDocsTypes.IDocsOpenApiResponse[]>();
+
     docs.forEach((doc) => {
       if (doc.type === "method") {
         const { path, method, summary, description, tags } = doc;
@@ -43,42 +45,59 @@ export class OpenApiDoc extends AutoDocsPlugin<"openApi"> {
           responses: {},
         };
       } else if (doc.type === "response") {
-        const { statusCode, description, contentType, schema, path } = doc;
-        const typedPath = path.path as keyof typeof spec.paths;
-        const typedMethod =
-          path.method as keyof (typeof spec.paths)[typeof typedPath];
-
-        const pathResolved = spec.paths[typedPath]?.[typedMethod];
-
-        if (!pathResolved) {
-          throw new Error(
-            `Path ${typedPath} with method ${typedMethod} not found in OpenAPI spec.`
-          );
+        const key = `${doc.path.path}::${doc.path.method}::${doc.statusCode}`;
+        if (!responseMap.has(key)) {
+          responseMap.set(key, []);
         }
-
-        if (
-          !pathResolved ||
-          typeof pathResolved !== "object" ||
-          !("responses" in pathResolved)
-        ) {
-          throw new Error(
-            `Path ${typedPath} with method ${typedMethod} does not have a responses object.`
-          );
-        }
-
-        if (!pathResolved.responses) {
-          pathResolved.responses = {};
-        }
-        pathResolved.responses[statusCode] = {
-          description: description || "No description provided",
-          content: {
-            [contentType || "application/json"]: {
-              schema: schema,
-            },
-          },
-        };
+        responseMap.get(key)?.push(doc);
       }
     });
+
+    for (const [key, responses] of responseMap.entries()) {
+      const [path, method, statusCode] = key.split("::");
+      const typedPath = path as keyof typeof spec.paths;
+      const typedMethod = method as keyof (typeof spec.paths)[typeof typedPath];
+
+      const pathResolved = spec.paths[typedPath]?.[typedMethod];
+
+      if (
+        !pathResolved ||
+        typeof pathResolved !== "object" ||
+        !("responses" in pathResolved)
+      ) {
+        throw new Error(
+          `Path ${typedPath} with method ${typedMethod} does not have a responses object.`
+        );
+      }
+
+      const contentTypeGroups: Record<string, any[]> = {};
+
+      for (const response of responses) {
+        const contentType = response.contentType || "application/json";
+        if (!contentTypeGroups[contentType]) {
+          contentTypeGroups[contentType] = [];
+        }
+        contentTypeGroups[contentType].push(response.schema);
+      }
+
+      const content: Record<string, any> = {};
+      for (const [contentType, schemas] of Object.entries(contentTypeGroups)) {
+        if (schemas.length === 1) {
+          content[contentType] = { schema: schemas[0] };
+        } else {
+          content[contentType] = {
+            schema: { anyOf: schemas },
+          };
+        }
+      }
+
+      pathResolved.responses[statusCode] = {
+        description:
+          responses.find((r) => r.description)?.description ||
+          "No description provided",
+        content,
+      };
+    }
 
     this.saveSpec(
       spec,
@@ -87,6 +106,7 @@ export class OpenApiDoc extends AutoDocsPlugin<"openApi"> {
 
     return spec as unknown as C;
   }
+
   saveSpec(spec: AutoDocsTypes.OpenAPISpec, outputDir: string): void {
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir);
