@@ -21,7 +21,8 @@
                         "hello": {
                           "type": "string"
                         }
-                      }
+                      },
+                      "description": "Wow this is so cool!"
                     },
                     {
                       "type": "object",
@@ -29,7 +30,8 @@
                         "userId": {
                           "type": "string"
                         }
-                      }
+                      },
+                      "description": "Test dynamic"
                     }
                   ]
                 }

@@ -40,7 +40,7 @@ export class OpenApiDoc extends AutoDocsPlugin<"openApi"> {
       openapi: "3.0.0",
       info: {
         title: builder.config.name,
-        version: builder.config.pluginConfig?.openApi.version || "1.0.0",
+        version: builder.config.pluginConfig?.openApi.version || "0.0.0",
         description: builder.config.description,
       },
       paths: {},
@@ -148,8 +148,13 @@ export class OpenApiDoc extends AutoDocsPlugin<"openApi"> {
       const type = res.contentType || "application/json";
       if (!res.schema) continue;
 
+      const schemaWithDescription =
+        res.description && !("$ref" in res.schema)
+          ? { ...res.schema, description: res.description }
+          : res.schema;
+
       if (!contentGroups[type]) contentGroups[type] = [];
-      contentGroups[type].push(res.schema);
+      contentGroups[type].push(schemaWithDescription);
     }
 
     const content: Record<
