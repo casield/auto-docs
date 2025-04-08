@@ -16,7 +16,8 @@
     "@types/aws-lambda": "^8.10.148",
     "jest": "^29.7.0",
     "serverless": "^4.4.15",
-    "ts-jest": "^29.2.5"
+    "ts-jest": "^29.2.5",
+    "electrodb": "^3.4.1"
   },
   "devDependencies": {
     "@types/node": "^22.10.1",

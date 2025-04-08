@@ -2,9 +2,7 @@ import { otherImport } from "@/other/other-import";
 import { dynamicAutoDocs } from "@auto-docs/serverless-dynamic";
 import { LambdaDocsBuilder } from "@auto-docs/core";
 import { OpenApiDoc } from "@auto-docs/openapi-plugin";
-import { DynamoLinker } from "@/DynamoLinker";
-
-console.log("Dynamic", dynamicAutoDocs);
+import * as Dynamic from "@auto-docs/serverless-dynamic";
 
 /**
  * @auto-docs
@@ -17,16 +15,11 @@ const helloBase = async (event: any) => {
     return await otherImport();
   }
 
-  /* @auto-docs
-   * The return response is a User object or a message.
-   * @statusCode 201
-   * @schema { message: string }
-   */
   return {
     body: JSON.stringify({
       hello: "World",
     }),
-    statusCode: 501,
+    statusCode: 200,
   };
 };
 
@@ -37,10 +30,9 @@ const builder = new LambdaDocsBuilder({
     openApi: {
       outputDir: "docs",
       version: "1.0.0",
-      schemas: {},
     },
   },
-  linker: new DynamoLinker("dynamicDocs"),
+  linker: new Dynamic.DynamoLinker("dynamicDocs"),
   plugins: [OpenApiDoc],
 });
 

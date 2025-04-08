@@ -38,7 +38,6 @@ export const LinkerObjectEntity = new Entity(
     },
   },
   {
-    table: "dynamicDocs",
     client: new DynamoDBClient(),
   }
 );

@@ -1,8 +1,10 @@
 import { LambdaDocsBuilder } from "@auto-docs/core";
 import { OpenApiDoc } from "@auto-docs/openapi-plugin";
 import Serverless from "serverless";
+import { DynamoLinker } from "./DynamoLinker";
 
 export * from "./dynamic";
+export * from "./DynamoLinker";
 
 interface Logger {
   info: (message: string) => void;
@@ -12,7 +14,7 @@ interface Logger {
   debug: (message: string) => void;
 }
 
-class ServerlessPlugin {
+export default class ServerlessPlugin {
   serverless: Serverless;
   options: any;
   utils: {
@@ -67,7 +69,7 @@ class ServerlessPlugin {
           version: "1.0.0",
         },
       },
-      linker: 
+      linker: new DynamoLinker(customConfig.linkerTableName),
       plugins: [OpenApiDoc],
     });
   }
@@ -90,5 +92,3 @@ class ServerlessPlugin {
 
   async autoDocsBuild() {}
 }
-
-module.exports = ServerlessPlugin;

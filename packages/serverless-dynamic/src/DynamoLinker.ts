@@ -1,17 +1,11 @@
 import { Linker } from "@auto-docs/core";
-import {
-  DynamoDBClient,
-  PutItemCommand,
-  GetItemCommand,
-  ScanCommand,
-} from "@aws-sdk/client-dynamodb";
-import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 import { LinkerObjectEntity } from "./electro";
 
 export class DynamoLinker extends Linker<AutoDocsTypes.AvailablePlugins> {
   constructor(public tableName: string) {
     super();
     this.init();
+    LinkerObjectEntity.setTableName(tableName);
   }
 
   init() {}
