@@ -17,4 +17,8 @@ export abstract class AutoDocsPlugin<T extends keyof AutoDocsTypes.Plugins> {
   public onInit(builder: LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins>) {}
 
   public onEnd(builder: LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins>) {}
+
+  public onDoc(doc: AutoDocsTypes.Plugins[T]): AutoDocsTypes.Plugins[T] {
+    return doc;
+  }
 }

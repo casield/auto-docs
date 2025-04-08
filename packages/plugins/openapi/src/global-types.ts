@@ -2,10 +2,22 @@ import "@auto-docs/core";
 
 declare global {
   export namespace AutoDocsTypes {
+    export type OpenApiMethods =
+      | "get"
+      | "post"
+      | "put"
+      | "delete"
+      | "patch"
+      | "options"
+      | "head";
+
     export interface IDocsOpenApiMethod extends IDocs {
       type: "method";
-      path: string;
-      method: "get" | "post" | "put" | "delete" | "patch" | "options" | "head";
+
+      path: {
+        method: OpenApiMethods;
+        path: string;
+      };
       summary?: string;
       description?: string;
       tags?: string[];
@@ -15,7 +27,7 @@ declare global {
 
       statusCode: number;
       path: {
-        method: string;
+        method: OpenApiMethods;
         path: string;
       };
       description?: string;

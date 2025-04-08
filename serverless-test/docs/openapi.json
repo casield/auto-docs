@@ -7,7 +7,7 @@
   },
   "paths": {
     "/hello": {
-      "GET": {
+      "get": {
         "responses": {
           "200": {
             "description": "Wow this is so cool!",

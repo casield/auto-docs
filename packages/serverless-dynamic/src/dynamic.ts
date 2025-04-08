@@ -58,10 +58,12 @@ export const dynamicAutoDocs = <T extends "openApi">(
 
       await builder.docs("openApi", {
         type: "method",
-        name: `${http.method}-${http.path}`,
+        name: getHash([http.method, http.path]),
         version: aggregatedResponse.version,
-        method: http.method as any,
-        path: http.path,
+        path: {
+          method: http.method as AutoDocsTypes.OpenApiMethods,
+          path: http.path,
+        },
       });
 
       await builder.docs("openApi", {
@@ -72,7 +74,7 @@ export const dynamicAutoDocs = <T extends "openApi">(
         description: aggregatedResponse.description,
         contentType: "application/json",
         path: {
-          method: http.method,
+          method: http.method as AutoDocsTypes.OpenApiMethods,
           path: http.path,
         },
         schema: createPropertiesFromBody(JSON.parse(response.body || "{}")),

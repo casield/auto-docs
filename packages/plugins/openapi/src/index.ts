@@ -73,9 +73,9 @@ export class OpenApiDoc extends AutoDocsPlugin<"openApi"> {
     spec: AutoDocsTypes.OpenAPISpec,
     methods: AutoDocsTypes.IDocsOpenApiMethod[]
   ) {
-    for (const { path, method, summary, description, tags } of methods) {
-      if (!spec.paths[path]) spec.paths[path] = {};
-      spec.paths[path][method] = {
+    for (const { path, summary, description, tags } of methods) {
+      if (!spec.paths[path.path]) spec.paths[path.path] = {};
+      spec.paths[path.path][path.method] = {
         summary,
         description,
         tags,
@@ -93,9 +93,7 @@ export class OpenApiDoc extends AutoDocsPlugin<"openApi"> {
     for (const [key, responseList] of responseMap.entries()) {
       const [path, method, statusCode] = key.split("::");
       const methodEntry =
-        spec.paths[path]?.[
-          method as AutoDocsTypes.IDocsOpenApiMethod["method"]
-        ];
+        spec.paths[path]?.[method as AutoDocsTypes.OpenApiMethods];
 
       if (
         !methodEntry ||
@@ -206,6 +204,15 @@ export class OpenApiDoc extends AutoDocsPlugin<"openApi"> {
       `${outputDir}/openapi.json`,
       JSON.stringify(spec, null, 2)
     );
+  }
+
+  onDoc(
+    doc: AutoDocsTypes.IDocsOpenApiMethod | AutoDocsTypes.IDocsOpenApiResponse
+  ): AutoDocsTypes.IDocsOpenApiMethod | AutoDocsTypes.IDocsOpenApiResponse {
+    doc.path.method =
+      doc.path.method.toLowerCase() as AutoDocsTypes.OpenApiMethods;
+
+    return doc;
   }
 
   onStart(builder: LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins>): void {}

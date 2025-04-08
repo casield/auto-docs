@@ -59,13 +59,14 @@ export class LambdaDocsBuilder<T extends AutoDocsTypes.AvailablePlugins> {
     type: T,
     docs: AutoDocsTypes.Plugins[T]
   ) {
-    if (
-      !this.plugins.some(
-        (plugin) => (plugin.type as AutoDocsTypes.AvailablePlugins) === type
-      )
-    ) {
+    const plugin = this.getPlugin(type);
+
+    if (!plugin) {
       throw new Error(`Plugin ${type} not found`);
     }
+
+    docs = plugin.onDoc(docs);
+
     await this._docs.link({
       data: docs,
       plugin: type,
@@ -76,6 +77,12 @@ export class LambdaDocsBuilder<T extends AutoDocsTypes.AvailablePlugins> {
     });
 
     return this;
+  }
+
+  private getPlugin(
+    type: AutoDocsTypes.AvailablePlugins
+  ): AutoDocsPlugin<T> | undefined {
+    return this.plugins.find((plugin) => plugin.type === type);
   }
 
   private isConcretePlugin(
