@@ -22,34 +22,55 @@ export class DynamoLinker extends Linker<AutoDocsTypes.AvailablePlugins> {
     }).go();
   }
 
-  async pull(): Promise<
+  async pull(
+    branch?: string
+  ): Promise<
     Record<string, AutoDocsTypes.LinkerObject<AutoDocsTypes.AvailablePlugins>[]>
   > {
-    const result = await LinkerObjectEntity.query
-      .pk({ plugin: "openApi" })
-      .go()
-      .then((result) => {
-        return result.data.map((item) => {
-          return {
-            plugin: item.plugin as AutoDocsTypes.AvailablePlugins,
-            version: item.version,
-            name: item.name,
-            description: item.name,
-            data: item.data,
-            branch: item.branch,
-          };
-        });
+    const data = await (branch
+      ? LinkerObjectEntity.query
+          .pk({
+            branch,
+          })
+          .go()
+      : LinkerObjectEntity.scan.go());
+
+    data.data = data.data.map((item) => {
+      return {
+        ...item,
+        data: JSON.parse(JSON.stringify(item.data)),
+      };
+    });
+    const result: Record<
+      string,
+      AutoDocsTypes.LinkerObject<AutoDocsTypes.AvailablePlugins>[]
+    > = {};
+    data.data.forEach((item) => {
+      if (!result[item.plugin]) {
+        result[item.plugin] = [];
+      }
+      result[item.plugin].push({
+        plugin: item.plugin as AutoDocsTypes.AvailablePlugins,
+        version: item.version,
+        name: item.name,
+        data: item.data,
+        branch: item.branch,
+        description: item.data.description || "",
       });
-    return {
-      openApi: result,
-    };
+    });
+    return result;
   }
 
   async has(
     doc: AutoDocsTypes.LinkerObject<AutoDocsTypes.AvailablePlugins>
   ): Promise<boolean> {
     const result = await LinkerObjectEntity.query
-      .pk({ plugin: doc.plugin, name: doc.name, version: doc.version })
+      .pk({
+        plugin: doc.plugin,
+        name: doc.name,
+        version: doc.version,
+        branch: doc.branch,
+      })
       .go();
     return result.data.length > 0;
   }

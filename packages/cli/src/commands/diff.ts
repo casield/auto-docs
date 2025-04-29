@@ -1,11 +1,8 @@
 import ora from "ora";
 import chalk from "chalk";
 import { VersionControl } from "@auto-docs/core";
-import { loadConfig } from "../utils/config.js";
-import {
-  displayChanges,
-  displayAttributeChanges,
-} from "../utils/interactive.js";
+import { loadConfig } from "../utils/config";
+import { displayChanges, displayAttributeChanges } from "../utils/interactive";
 
 export async function diff(
   source: string,

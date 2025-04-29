@@ -32,11 +32,11 @@ export const LinkerObjectEntity = new Entity(
       pk: {
         pk: {
           field: "pk",
-          composite: ["plugin"],
+          composite: ["branch"],
         },
         sk: {
           field: "sk",
-          composite: ["name", "version", "branch"],
+          composite: ["name", "version", "plugin"],
         },
       },
     },

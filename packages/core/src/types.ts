@@ -17,7 +17,7 @@ declare global {
       link(doc: AutoDocsTypes.LinkerObject<T>): Promise<void>;
 
       pull(
-        branch: string
+        branch?: string
       ): Promise<Record<string, AutoDocsTypes.LinkerObject<T>[]>>;
 
       has(doc: AutoDocsTypes.LinkerObject<T>): Promise<boolean>;

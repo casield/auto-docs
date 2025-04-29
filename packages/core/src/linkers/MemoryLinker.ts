@@ -24,8 +24,11 @@ export class MemoryLinker<
   }
 
   public async pull(
-    branch: string
+    branch?: string
   ): Promise<Record<string, AutoDocsTypes.LinkerObject<T>[]>> {
+    if (!branch) {
+      return this.docs;
+    }
     return Object.fromEntries(
       Object.entries(this.docs).map(([plugin, docs]) => [
         plugin,
