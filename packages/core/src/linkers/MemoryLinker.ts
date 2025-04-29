@@ -13,6 +13,7 @@ export class MemoryLinker<
     const existingDocIndex = this.docs[doc.plugin].findIndex(
       (d) =>
         d.name === doc.name &&
+        d.plugin === doc.plugin &&
         d.version === doc.version &&
         d.branch === doc.branch
     );

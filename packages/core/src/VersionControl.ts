@@ -195,8 +195,28 @@ export class VersionControl<T extends keyof AutoDocsTypes.Plugins> {
               if (conflictResolution) {
                 resolvedDoc = await conflictResolution(change);
               } else {
-                // Default resolution: take the newer version (objectB)
-                resolvedDoc = { ...change.objectB, branch: targetBranch };
+                const mergedDoc = this.mergeDocuments(
+                  change.objectA.data,
+                  change.objectA.data,
+                  change.objectB.data
+                );
+
+                if (mergedDoc) {
+                  // If the merge is successful, we set the branch to the target
+                  resolvedDoc = {
+                    branch: targetBranch,
+                    description: change.objectB.description,
+                    name: change.objectB.name,
+                    plugin: change.objectB.plugin,
+                    version: change.objectB.version,
+                    data: mergedDoc,
+                  };
+
+                  console.log({ mergedDoc });
+                } else {
+                  // If merge fails, mark as conflict
+                  conflicts++;
+                }
               }
 
               if (resolvedDoc) {
