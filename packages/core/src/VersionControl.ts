@@ -255,7 +255,16 @@ export class VersionControl<T extends keyof AutoDocsTypes.Plugins> {
     for (const change of changes) {
       // Skip empty paths
       if (!change.path || change.path === "root") {
-        return change.newValue as D;
+        // Only replace the root object if the new value is not undefined
+        if (change.newValue !== undefined) {
+          return change.newValue as D;
+        }
+        continue;
+      }
+
+      // Skip changes where the new value is undefined
+      if (change.newValue === undefined) {
+        continue;
       }
 
       // Parse the path
@@ -312,25 +321,57 @@ export class VersionControl<T extends keyof AutoDocsTypes.Plugins> {
   }
 
   /**
-   * Default conflict resolution strategy that merges documents by:
+   * Default conflict resolution strategy that recursively merges documents:
    * 1. Preserving all fields from documentA
    * 2. Adding new fields from documentB that don't exist in documentA
-   * 3. Keeping documentA's values when the same field exists in both documents
+   * 3. Recursively merging nested objects and arrays
+   * 4. Keeping old values when new values are undefined
    *
-   * @param change - The document change with conflict
-   * @returns A resolved document or null if resolution fails
+   * @param objA - The first document
+   * @param objB - The second document
+   * @returns A resolved document
    */
   public defaultConflictResolution<D>(objA: D, objB: D): D {
-    // Start with all properties from A
+    // If either input is null or undefined, return the other
+    if (objA === null || objA === undefined) return objB;
+    if (objB === null || objB === undefined) return objA;
+
+    // If either input is not an object, prioritize objA
+    if (typeof objA !== "object" || typeof objB !== "object") return objA;
+
+    // Handle arrays
+    if (Array.isArray(objA) && Array.isArray(objB)) {
+      // For arrays, we keep all items from objA and add non-duplicate items from objB
+      const mergedArray = [...objA];
+
+      for (const item of objB) {
+        if (
+          !mergedArray.some(
+            (existing) => JSON.stringify(existing) === JSON.stringify(item)
+          )
+        ) {
+          mergedArray.push(item);
+        }
+      }
+
+      return mergedArray as unknown as D;
+    }
+
+    // For objects, create a new object with properties from both
     const result = { ...objA } as any;
 
-    // Add properties from B that don't exist in A
-    if (typeof objB === "object" && objB !== null) {
-      Object.entries(objB as any).forEach(([key, value]) => {
-        if (result[key] === undefined) {
-          result[key] = value;
-        }
-      });
+    // Recursively merge properties from objB
+    for (const [key, valueB] of Object.entries(objB as any)) {
+      // Skip undefined values - keep the original value from objA
+      if (valueB === undefined) continue;
+
+      if (key in result) {
+        // If property exists in both, recursively merge
+        result[key] = this.defaultConflictResolution(result[key], valueB);
+      } else {
+        // If property only exists in objB, add it
+        result[key] = valueB;
+      }
     }
 
     return result as D;

@@ -57,6 +57,7 @@ export const dynamicAutoDocs = <T extends "openApi">(
       await builder.docs("openApi", {
         type: "method",
         name: getHash([http.method, http.path, branch]),
+        id: getHash([http.method, http.path]),
         version: aggregatedResponse.version,
         path: {
           method: http.method as AutoDocsTypes.OpenApiMethods,
@@ -74,7 +75,7 @@ export const dynamicAutoDocs = <T extends "openApi">(
       await builder.docs("openApi", {
         type: "response",
         name,
-
+        id: getHash([aggregatedResponse.body]),
         version: aggregatedResponse.version,
         statusCode: response.statusCode,
         description: aggregatedResponse.description,

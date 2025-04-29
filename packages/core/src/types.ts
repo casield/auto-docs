@@ -5,6 +5,7 @@ declare global {
     export interface IDocs {
       name: string;
       version: string;
+      id: string;
     }
 
     export interface Plugins {}
