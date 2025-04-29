@@ -32,7 +32,7 @@ export class VersionControl<T extends keyof AutoDocsTypes.Plugins> {
 
     // Find added items
     docsB.forEach((docB) => {
-      if (!docsA.some((docA) => docA.name === docB.name)) {
+      if (!docsA.some((docA) => docA.name === docB.name && docA.id === docB.id)) {
         changes.push({
           status: "added",
           name: docB.name,
@@ -43,7 +43,7 @@ export class VersionControl<T extends keyof AutoDocsTypes.Plugins> {
 
     // Find removed items
     docsA.forEach((docA) => {
-      if (!docsB.some((docB) => docB.name === docA.name)) {
+      if (!docsB.some((docB) => docB.name === docA.name && docB.id === docA.id)) {
         changes.push({
           status: "removed",
           name: docA.name,
@@ -54,7 +54,7 @@ export class VersionControl<T extends keyof AutoDocsTypes.Plugins> {
 
     // Find modified items and detect specific changes
     docsA.forEach((docA) => {
-      const docB = docsB.find((d) => d.name === docA.name);
+      const docB = docsB.find((d) => d.name === docA.name && d.id === docA.id);
       if (docB && JSON.stringify(docB.data) !== JSON.stringify(docA.data)) {
         const attributeChanges = this.compareObjects(docA.data, docB.data);
 

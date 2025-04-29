@@ -19,7 +19,10 @@
                       "$ref": "#/components/schemas/com.drokt.HelloMessage"
                     },
                     {
-                      "$ref": "#/components/schemas/com.drokt.User"
+                      "$ref": "#/components/schemas/com.drokt.HelloMessage"
+                    },
+                    {
+                      "$ref": "#/components/schemas/com.drokt.HelloMessage"
                     }
                   ]
                 }
@@ -35,15 +38,13 @@
       "com.drokt.HelloMessage": {
         "type": "object",
         "properties": {
-          "hello": {
+          "omg": {
             "type": "string"
-          }
-        }
-      },
-      "com.drokt.User": {
-        "type": "object",
-        "properties": {
-          "userId": {
+          },
+          "omg2": {
+            "type": "string"
+          },
+          "hello": {
             "type": "string"
           }
         }

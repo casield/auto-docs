@@ -15,7 +15,7 @@ const helloBase = async (event: any) => {
     body: JSON.stringify({
       hello: "World",
       omg: "so cool",
-      omg2: "so cool",
+      omg2: 2,
     }),
     description: "Wow this is so cool!",
     schema: "com.drokt.HelloMessage",
