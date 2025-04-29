@@ -157,8 +157,8 @@ export class VersionControl<T extends keyof AutoDocsTypes.Plugins> {
     sourceBranch: string,
     targetBranch: string,
     conflictResolution?: (
-      change: DocumentChange<T>
-    ) => AutoDocsTypes.LinkerObject<T> | null
+      change: DocumentChange<T> | null
+    ) => Promise<AutoDocsTypes.LinkerObject<T> | null>
   ): Promise<{
     merged: number;
     skipped: number;
@@ -193,7 +193,7 @@ export class VersionControl<T extends keyof AutoDocsTypes.Plugins> {
               let resolvedDoc: AutoDocsTypes.LinkerObject<T> | null = null;
 
               if (conflictResolution) {
-                resolvedDoc = conflictResolution(change);
+                resolvedDoc = await conflictResolution(change);
               } else {
                 // Default resolution: take the newer version (objectB)
                 resolvedDoc = { ...change.objectB, branch: targetBranch };
