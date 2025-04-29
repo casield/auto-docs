@@ -191,31 +191,28 @@ export class VersionControl<T extends keyof AutoDocsTypes.Plugins> {
               // By default, we take objectB (newer version) for the merge
               // If conflict resolution is provided, let it decide how to handle the merge
               let resolvedDoc: AutoDocsTypes.LinkerObject<T> | null = null;
+              const mergedDoc = this.mergeDocuments(
+                {}, // Use an empty object as base for proper merging
+                change.objectA.data,
+                change.objectB.data
+              );
 
-              if (conflictResolution) {
+              if (mergedDoc) {
+                // If the merge is successful, we set the branch to the target
+                resolvedDoc = {
+                  branch: targetBranch,
+                  description: change.objectB.description,
+                  name: change.objectB.name,
+                  plugin: change.objectB.plugin,
+                  version: change.objectB.version,
+                  data: mergedDoc as any,
+                };
+              } else if (conflictResolution) {
+                // If the merge fails, we call the conflict resolution function
                 resolvedDoc = await conflictResolution(change);
-              } else {
-                const mergedDoc = this.mergeDocuments(
-                  change.objectA.data,
-                  change.objectA.data,
-                  change.objectB.data
-                );
-
-                if (mergedDoc) {
-                  // If the merge is successful, we set the branch to the target
-                  resolvedDoc = {
-                    branch: targetBranch,
-                    description: change.objectB.description,
-                    name: change.objectB.name,
-                    plugin: change.objectB.plugin,
-                    version: change.objectB.version,
-                    data: mergedDoc,
-                  };
-
-                  console.log({ mergedDoc });
-                } else {
-                  // If merge fails, mark as conflict
+                if (!resolvedDoc) {
                   conflicts++;
+                  continue; // Skip this document if resolution fails
                 }
               }
 
