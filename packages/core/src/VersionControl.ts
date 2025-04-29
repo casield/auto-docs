@@ -21,10 +21,14 @@ export class VersionControl<T extends keyof AutoDocsTypes.Plugins> {
     branchA: string,
     branchB: string
   ): Promise<DocumentChange<T>[]> {
-    const docsA = (await this.linker.pull())[branchA] || [];
-    const docsB = (await this.linker.pull())[branchB] || [];
+    const pullA = (await this.linker.pull(branchA)) || [];
+    const pullB = (await this.linker.pull(branchB)) || [];
 
     const changes: DocumentChange<T>[] = [];
+
+    // Flatten the pulled documents
+    const docsA = Object.values(pullA).flat();
+    const docsB = Object.values(pullB).flat();
 
     // Find added items
     docsB.forEach((docB) => {

@@ -6,6 +6,10 @@ export const dynamicAutoDocs = <T extends "openApi">(
   handler: Handler<APIGatewayEvent, APIGatewayProxyResultV2>,
   builder: LambdaDocsBuilder<T>
 ): Handler<APIGatewayEvent, APIGatewayProxyResultV2> => {
+  const branch = process.env.AUTODOCS_BRANCH;
+  if (!branch) {
+    throw new Error("AUTODOCS_BRANCH is not set as an environment variable");
+  }
   return async (event, context) => {
     const response = await new Promise<APIGatewayProxyResultV2>(
       (resolve, reject) => {
@@ -43,6 +47,7 @@ export const dynamicAutoDocs = <T extends "openApi">(
         http.path,
         Object.keys(JSON.parse(response.body || "{}")),
         response.statusCode,
+        branch,
       ]);
 
       const aggregatedResponse = {
@@ -58,7 +63,7 @@ export const dynamicAutoDocs = <T extends "openApi">(
 
       await builder.docs("openApi", {
         type: "method",
-        name: getHash([http.method, http.path]),
+        name: getHash([http.method, http.path, branch]),
         version: aggregatedResponse.version,
         path: {
           method: http.method as AutoDocsTypes.OpenApiMethods,

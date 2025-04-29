@@ -16,7 +16,9 @@ declare global {
     export interface ILinker<T extends keyof Plugins> {
       link(doc: AutoDocsTypes.LinkerObject<T>): Promise<void>;
 
-      pull(): Promise<Record<string, AutoDocsTypes.LinkerObject<T>[]>>;
+      pull(
+        branch: string
+      ): Promise<Record<string, AutoDocsTypes.LinkerObject<T>[]>>;
 
       has(doc: AutoDocsTypes.LinkerObject<T>): Promise<boolean>;
 

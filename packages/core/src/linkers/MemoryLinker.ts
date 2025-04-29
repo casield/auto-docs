@@ -23,20 +23,36 @@ export class MemoryLinker<
     }
   }
 
-  public async pull(): Promise<
-    Record<string, AutoDocsTypes.LinkerObject<T>[]>
-  > {
-    return this.docs;
+  public async pull(
+    branch: string
+  ): Promise<Record<string, AutoDocsTypes.LinkerObject<T>[]>> {
+    return Object.fromEntries(
+      Object.entries(this.docs).map(([plugin, docs]) => [
+        plugin,
+        docs.filter((doc) => doc.branch === branch),
+      ])
+    );
   }
 
   public async has(doc: AutoDocsTypes.LinkerObject<T>): Promise<boolean> {
-    return !!this.docs[doc.plugin];
+    return (
+      !!this.docs[doc.plugin] &&
+      this.docs[doc.plugin].some(
+        (d) =>
+          d.name === doc.name &&
+          d.version === doc.version &&
+          d.branch === doc.branch
+      )
+    );
   }
 
   public async delete(doc: AutoDocsTypes.LinkerObject<T>): Promise<void> {
     if (this.docs[doc.plugin]) {
       this.docs[doc.plugin] = this.docs[doc.plugin].filter(
-        (d) => d.name !== doc.name || d.version !== doc.version
+        (d) =>
+          d.name !== doc.name ||
+          d.version !== doc.version ||
+          d.branch !== doc.branch
       );
     }
   }

@@ -18,6 +18,7 @@ export class DynamoLinker extends Linker<AutoDocsTypes.AvailablePlugins> {
       version: doc.version,
       name: doc.name,
       data: JSON.parse(JSON.stringify(doc.data)),
+      branch: doc.branch,
     }).go();
   }
 
@@ -35,6 +36,7 @@ export class DynamoLinker extends Linker<AutoDocsTypes.AvailablePlugins> {
             name: item.name,
             description: item.name,
             data: item.data,
+            branch: item.branch,
           };
         });
       });
@@ -50,5 +52,16 @@ export class DynamoLinker extends Linker<AutoDocsTypes.AvailablePlugins> {
       .pk({ plugin: doc.plugin, name: doc.name, version: doc.version })
       .go();
     return result.data.length > 0;
+  }
+
+  async delete(
+    doc: AutoDocsTypes.LinkerObject<AutoDocsTypes.AvailablePlugins>
+  ): Promise<void> {
+    await LinkerObjectEntity.delete({
+      plugin: doc.plugin,
+      name: doc.name,
+      version: doc.version,
+      branch: doc.branch,
+    }).go();
   }
 }

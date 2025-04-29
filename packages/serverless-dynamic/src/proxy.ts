@@ -4,6 +4,10 @@ import { Linker } from "@auto-docs/core";
 
 export const lambdaProxy = () => {
   return async (event: APIGatewayEvent) => {
+    const branch = process.env.AUTODOCS_BRANCH;
+    if (!branch) {
+      throw new Error("AUTODOCS_BRANCH is not set as an environment variable");
+    }
     const linker = new DynamoLinker(process.env.LINKER_TABLE_NAME || "");
     const path = event.pathParameters?.proxy;
 
@@ -23,6 +27,7 @@ export const lambdaProxy = () => {
         name,
         data,
         description: `Linked ${name} with version ${version}`,
+        branch,
       });
       return {
         statusCode: 200,
@@ -38,10 +43,28 @@ export const lambdaProxy = () => {
         name,
         description: `Checked if ${name} with version ${version} exists`,
         data,
+        branch,
       });
       return {
         statusCode: 200,
         body: JSON.stringify({ exists: result }),
+      };
+    }
+
+    if (path === "delete") {
+      const { plugin, version, name } = JSON.parse(event.body || "{}");
+
+      await linker.delete({
+        plugin,
+        version,
+        name,
+        description: `Deleted ${name} with version ${version}`,
+        branch,
+        data: {} as any,
+      });
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ message: "Deleted successfully" }),
       };
     }
   };
@@ -96,5 +119,19 @@ export class DynamicProxyLinker extends Linker<AutoDocsTypes.AvailablePlugins> {
         return res.json();
       })
       .then((res) => res.exists);
+  }
+
+  async delete(doc: AutoDocsTypes.LinkerObject<"openApi">): Promise<void> {
+    return await fetch(`${this.url}/delete`, {
+      method: "POST",
+      body: JSON.stringify(doc),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }).then((res) => {
+      if (!res.ok) {
+        throw new Error("Failed to delete document");
+      }
+    });
   }
 }
