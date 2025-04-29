@@ -20,6 +20,10 @@ export const LinkerObjectEntity = new Entity(
         type: "string",
         required: true,
       },
+      id: {
+        type: "string",
+        required: true,
+      },
       branch: {
         type: "string",
         required: true,
@@ -36,7 +40,7 @@ export const LinkerObjectEntity = new Entity(
         },
         sk: {
           field: "sk",
-          composite: ["name", "version", "plugin"],
+          composite: ["name", "version", "plugin", "id"],
         },
       },
     },

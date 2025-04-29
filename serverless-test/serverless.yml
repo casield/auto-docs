@@ -40,7 +40,7 @@ functions:
     events:
       - httpApi:
           path: /bye
-          method: post
+          method: get
 
   proxy:
     handler: src/handlers/handler.proxy

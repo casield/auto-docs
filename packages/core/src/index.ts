@@ -75,7 +75,7 @@ export class LambdaDocsBuilder<T extends AutoDocsTypes.AvailablePlugins> {
         "version" in docs ? (docs as { version: string }).version : "0.0.0",
       description: "TODO",
       name: "name" in docs ? (docs as { name: string }).name : "Unknown",
-
+      id: "id" in docs ? (docs as { id: string }).id : "Unknown",
       branch: this.config.branch || "main",
     });
 

@@ -5,12 +5,6 @@ import { Linker } from "@auto-docs/core";
 export const lambdaProxy = () => {
   return async (event: APIGatewayEvent) => {
     try {
-      const branch = process.env.AUTODOCS_BRANCH;
-      if (!branch) {
-        throw new Error(
-          "AUTODOCS_BRANCH is not set as an environment variable"
-        );
-      }
       const linker = new DynamoLinker(process.env.LINKER_TABLE_NAME || "");
       const path = event.pathParameters?.proxy;
 
@@ -23,7 +17,9 @@ export const lambdaProxy = () => {
       }
 
       if (path === "link") {
-        const { plugin, version, name, data } = JSON.parse(event.body || "{}");
+        const { plugin, version, name, data, branch, id } = JSON.parse(
+          event.body || "{}"
+        );
         await linker.link({
           plugin,
           version,
@@ -31,6 +27,7 @@ export const lambdaProxy = () => {
           data,
           description: `Linked ${name} with version ${version}`,
           branch,
+          id,
         });
         return {
           statusCode: 200,
@@ -39,7 +36,9 @@ export const lambdaProxy = () => {
       }
 
       if (path === "has") {
-        const { plugin, version, name, data } = JSON.parse(event.body || "{}");
+        const { plugin, version, name, data, id, branch } = JSON.parse(
+          event.body || "{}"
+        );
         const result = await linker.has({
           plugin,
           version,
@@ -47,6 +46,7 @@ export const lambdaProxy = () => {
           description: `Checked if ${name} with version ${version} exists`,
           data,
           branch,
+          id,
         });
         return {
           statusCode: 200,
@@ -55,7 +55,9 @@ export const lambdaProxy = () => {
       }
 
       if (path === "delete") {
-        const { plugin, version, name } = JSON.parse(event.body || "{}");
+        const { plugin, version, name, id, branch } = JSON.parse(
+          event.body || "{}"
+        );
 
         await linker.delete({
           plugin,
@@ -64,6 +66,7 @@ export const lambdaProxy = () => {
           description: `Deleted ${name} with version ${version}`,
           branch,
           data: {} as any,
+          id,
         });
         return {
           statusCode: 200,

@@ -192,7 +192,7 @@ export class VersionControl<T extends keyof AutoDocsTypes.Plugins> {
               // If conflict resolution is provided, let it decide how to handle the merge
               let resolvedDoc: AutoDocsTypes.LinkerObject<T> | null = null;
               const mergedDoc = this.mergeDocuments(
-                {}, // Use an empty object as base for proper merging
+                {},
                 change.objectA.data,
                 change.objectB.data
               );
@@ -203,6 +203,7 @@ export class VersionControl<T extends keyof AutoDocsTypes.Plugins> {
                   branch: targetBranch,
                   description: change.objectB.description,
                   name: change.objectB.name,
+                  id: change.objectB.id,
                   plugin: change.objectB.plugin,
                   version: change.objectB.version,
                   data: mergedDoc as any,

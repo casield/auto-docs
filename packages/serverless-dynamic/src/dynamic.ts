@@ -8,7 +8,6 @@ export const dynamicAutoDocs = <T extends "openApi">(
   branch?: string
 ): Handler<APIGatewayEvent, APIGatewayProxyResultV2> => {
   branch = branch ?? process.env.AUTODOCS_BRANCH;
-  console.log("Branch: ", branch);
   if (!branch) {
     throw new Error("AUTODOCS_BRANCH is not set as an environment variable");
   }
@@ -44,14 +43,6 @@ export const dynamicAutoDocs = <T extends "openApi">(
         throw new Error("HTTP context not found in event");
       }
 
-      const name = getHash([
-        http.method,
-        http.path,
-        Object.keys(JSON.parse(response.body || "{}")),
-        response.statusCode,
-        branch,
-      ]);
-
       const aggregatedResponse = {
         ...response,
         version: (response as { version: string }).version || "0.0.0",
@@ -73,9 +64,17 @@ export const dynamicAutoDocs = <T extends "openApi">(
         },
       });
 
+      const name = getHash([
+        http.method,
+        http.path,
+        response.statusCode,
+        branch,
+      ]);
+
       await builder.docs("openApi", {
         type: "response",
         name,
+
         version: aggregatedResponse.version,
         statusCode: response.statusCode,
         description: aggregatedResponse.description,

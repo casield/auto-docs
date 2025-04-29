@@ -40,6 +40,7 @@ declare global {
       description: string;
       data: Plugins[T];
       name: string;
+      id: string;
       branch: string;
     }
 
