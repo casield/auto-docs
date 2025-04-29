@@ -214,6 +214,12 @@ export class VersionControl<T extends keyof AutoDocsTypes.Plugins> {
                   conflicts++;
                   continue; // Skip this document if resolution fails
                 }
+              } else {
+                // If no conflict resolution is provided, we use the default
+                resolvedDoc = this.defaultConflictResolution(
+                  change.objectA.data,
+                  change.objectB.data
+                );
               }
 
               if (resolvedDoc) {
@@ -305,6 +311,31 @@ export class VersionControl<T extends keyof AutoDocsTypes.Plugins> {
   }
 
   /**
+   * Default conflict resolution strategy that merges documents by:
+   * 1. Preserving all fields from documentA
+   * 2. Adding new fields from documentB that don't exist in documentA
+   * 3. Keeping documentA's values when the same field exists in both documents
+   *
+   * @param change - The document change with conflict
+   * @returns A resolved document or null if resolution fails
+   */
+  public defaultConflictResolution<D>(objA: D, objB: D): D {
+    // Start with all properties from A
+    const result = { ...objA } as any;
+
+    // Add properties from B that don't exist in A
+    if (typeof objB === "object" && objB !== null) {
+      Object.entries(objB as any).forEach(([key, value]) => {
+        if (result[key] === undefined) {
+          result[key] = value;
+        }
+      });
+    }
+
+    return result as D;
+  }
+
+  /**
    * Create a three-way merge of documents using a common ancestor
    * @param base - The common ancestor document
    * @param docA - The first document to merge
@@ -331,8 +362,8 @@ export class VersionControl<T extends keyof AutoDocsTypes.Plugins> {
     });
 
     if (conflictPaths.size > 0) {
-      // Conflicts detected, return null
-      return null;
+      // Conflicts detected, but we can try to resolve them with our strategy
+      return this.defaultConflictResolution(docA, docB);
     }
 
     // No conflicts, apply both sets of changes
