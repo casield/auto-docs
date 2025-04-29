@@ -39,6 +39,8 @@ program
 
 program
   .command("list-branches")
+  .alias("branches")
+  .alias("ls")
   .description("List all available branches")
   .option(
     "-c, --config <path>",

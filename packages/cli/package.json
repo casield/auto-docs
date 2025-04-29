@@ -10,7 +10,8 @@
   "scripts": {
     "test": "jest",
     "build": "tsup",
-    "start": "node dist/bin.js"
+    "start": "node dist/bin.js",
+    "dev": "npx tsx src/bin"
   },
   "author": "",
   "license": "ISC",

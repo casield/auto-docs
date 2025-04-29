@@ -88,6 +88,7 @@ class ServerlessPlugin {
       },
       linker: new DynamicProxyLinker(customConfig.linkerRoute),
       plugins: [OpenApiDoc],
+      branch: "niceeee",
     });
   }
 

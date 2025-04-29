@@ -31,7 +31,7 @@ declare global {
       plugins: (typeof AutoDocsPlugin<T>)[];
       pluginConfig?: PluginConfig;
       linker?: ILinker<T>;
-      branch?: string;
+      branch: string;
     }
 
     export interface LinkerObject<T extends keyof Plugins> {

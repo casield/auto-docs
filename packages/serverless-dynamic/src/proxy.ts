@@ -4,67 +4,77 @@ import { Linker } from "@auto-docs/core";
 
 export const lambdaProxy = () => {
   return async (event: APIGatewayEvent) => {
-    const branch = process.env.AUTODOCS_BRANCH;
-    if (!branch) {
-      throw new Error("AUTODOCS_BRANCH is not set as an environment variable");
-    }
-    const linker = new DynamoLinker(process.env.LINKER_TABLE_NAME || "");
-    const path = event.pathParameters?.proxy;
+    try {
+      const branch = process.env.AUTODOCS_BRANCH;
+      if (!branch) {
+        throw new Error(
+          "AUTODOCS_BRANCH is not set as an environment variable"
+        );
+      }
+      const linker = new DynamoLinker(process.env.LINKER_TABLE_NAME || "");
+      const path = event.pathParameters?.proxy;
 
-    if (path === "pull") {
-      const result = await linker.pull();
+      if (path === "pull") {
+        const result = await linker.pull();
+        return {
+          statusCode: 200,
+          body: JSON.stringify(result),
+        };
+      }
+
+      if (path === "link") {
+        const { plugin, version, name, data } = JSON.parse(event.body || "{}");
+        await linker.link({
+          plugin,
+          version,
+          name,
+          data,
+          description: `Linked ${name} with version ${version}`,
+          branch,
+        });
+        return {
+          statusCode: 200,
+          body: JSON.stringify({ message: "Linked successfully" }),
+        };
+      }
+
+      if (path === "has") {
+        const { plugin, version, name, data } = JSON.parse(event.body || "{}");
+        const result = await linker.has({
+          plugin,
+          version,
+          name,
+          description: `Checked if ${name} with version ${version} exists`,
+          data,
+          branch,
+        });
+        return {
+          statusCode: 200,
+          body: JSON.stringify({ exists: result }),
+        };
+      }
+
+      if (path === "delete") {
+        const { plugin, version, name } = JSON.parse(event.body || "{}");
+
+        await linker.delete({
+          plugin,
+          version,
+          name,
+          description: `Deleted ${name} with version ${version}`,
+          branch,
+          data: {} as any,
+        });
+        return {
+          statusCode: 200,
+          body: JSON.stringify({ message: "Deleted successfully" }),
+        };
+      }
+    } catch (error) {
+      console.error("Error in lambdaProxy:", error);
       return {
-        statusCode: 200,
-        body: JSON.stringify(result),
-      };
-    }
-
-    if (path === "link") {
-      const { plugin, version, name, data } = JSON.parse(event.body || "{}");
-      await linker.link({
-        plugin,
-        version,
-        name,
-        data,
-        description: `Linked ${name} with version ${version}`,
-        branch,
-      });
-      return {
-        statusCode: 200,
-        body: JSON.stringify({ message: "Linked successfully" }),
-      };
-    }
-
-    if (path === "has") {
-      const { plugin, version, name, data } = JSON.parse(event.body || "{}");
-      const result = await linker.has({
-        plugin,
-        version,
-        name,
-        description: `Checked if ${name} with version ${version} exists`,
-        data,
-        branch,
-      });
-      return {
-        statusCode: 200,
-        body: JSON.stringify({ exists: result }),
-      };
-    }
-
-    if (path === "delete") {
-      const { plugin, version, name } = JSON.parse(event.body || "{}");
-
-      await linker.delete({
-        plugin,
-        version,
-        name,
-        description: `Deleted ${name} with version ${version}`,
-        branch,
-        data: {} as any,
-      });
-      return {
-        statusCode: 200,
-        body: JSON.stringify({ message: "Deleted successfully" }),
+        statusCode: 500,
+        body: JSON.stringify({ message: "Internal Server Error" }),
       };
     }
   };

@@ -36,7 +36,7 @@ export class LambdaDocsBuilder<T extends AutoDocsTypes.AvailablePlugins> {
   public async run<T extends AutoDocsTypes.AvailablePlugins>(): Promise<
     Record<T, AutoDocsTypes.PluginResponse>
   > {
-    const handlersFilter = await this._docs.pull(this.config.branch || "main");
+    const handlersFilter = await this._docs.pull(this.config.branch);
     const results: Record<
       AutoDocsTypes.AvailablePlugins,
       AutoDocsTypes.PluginResponse

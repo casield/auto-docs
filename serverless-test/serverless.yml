@@ -8,6 +8,8 @@ service: serverless-test
 provider:
   name: aws
   runtime: nodejs20.x
+  environment:
+    AUTODOCS_BRANCH: main
   iam:
     role:
       statements:

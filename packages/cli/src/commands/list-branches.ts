@@ -55,6 +55,7 @@ export async function listBranches(options: { config: string }) {
         `\n❌ Error: ${error instanceof Error ? error.message : String(error)}`
       )
     );
+    console.log(error);
     process.exit(1);
   }
 }

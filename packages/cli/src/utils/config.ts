@@ -41,13 +41,8 @@ export function loadConfig(configPath: string) {
   return new LambdaDocsBuilder({
     name: config.name,
     description: config.description,
-    pluginConfig: {
-      openApi: {
-        outputDir: config.outputDir || "docs",
-        version: config.version || "1.0.0",
-      },
-    },
     linker,
     plugins: [],
+    branch: "main",
   });
 }

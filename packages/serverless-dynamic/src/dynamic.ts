@@ -4,9 +4,11 @@ import { createHash } from "crypto";
 
 export const dynamicAutoDocs = <T extends "openApi">(
   handler: Handler<APIGatewayEvent, APIGatewayProxyResultV2>,
-  builder: LambdaDocsBuilder<T>
+  builder: LambdaDocsBuilder<T>,
+  branch?: string
 ): Handler<APIGatewayEvent, APIGatewayProxyResultV2> => {
-  const branch = process.env.AUTODOCS_BRANCH;
+  branch = branch ?? process.env.AUTODOCS_BRANCH;
+  console.log("Branch: ", branch);
   if (!branch) {
     throw new Error("AUTODOCS_BRANCH is not set as an environment variable");
   }
