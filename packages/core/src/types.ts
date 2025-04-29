@@ -19,6 +19,8 @@ declare global {
       pull(): Promise<Record<string, AutoDocsTypes.LinkerObject<T>[]>>;
 
       has(doc: AutoDocsTypes.LinkerObject<T>): Promise<boolean>;
+
+      delete(doc: AutoDocsTypes.LinkerObject<T>): Promise<void>;
     }
 
     export interface AutoDocsConfig<T extends keyof Plugins> {
@@ -27,6 +29,7 @@ declare global {
       plugins: (typeof AutoDocsPlugin<T>)[];
       pluginConfig?: PluginConfig;
       linker?: ILinker<T>;
+      branch?: string;
     }
 
     export interface LinkerObject<T extends keyof Plugins> {
@@ -35,6 +38,7 @@ declare global {
       description: string;
       data: Plugins[T];
       name: string;
+      branch: string;
     }
 
     export type AvailablePlugins = keyof Plugins;

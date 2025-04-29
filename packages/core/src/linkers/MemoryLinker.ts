@@ -9,7 +9,18 @@ export class MemoryLinker<
     if (!this.docs[doc.plugin]) {
       this.docs[doc.plugin] = [];
     }
-    this.docs[doc.plugin].push(doc);
+
+    const existingDocIndex = this.docs[doc.plugin].findIndex(
+      (d) =>
+        d.name === doc.name &&
+        d.version === doc.version &&
+        d.branch === doc.branch
+    );
+    if (existingDocIndex !== -1) {
+      this.docs[doc.plugin][existingDocIndex] = doc;
+    } else {
+      this.docs[doc.plugin].push(doc);
+    }
   }
 
   public async pull(): Promise<
@@ -20,5 +31,13 @@ export class MemoryLinker<
 
   public async has(doc: AutoDocsTypes.LinkerObject<T>): Promise<boolean> {
     return !!this.docs[doc.plugin];
+  }
+
+  public async delete(doc: AutoDocsTypes.LinkerObject<T>): Promise<void> {
+    if (this.docs[doc.plugin]) {
+      this.docs[doc.plugin] = this.docs[doc.plugin].filter(
+        (d) => d.name !== doc.name || d.version !== doc.version
+      );
+    }
   }
 }

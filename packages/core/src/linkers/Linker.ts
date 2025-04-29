@@ -6,4 +6,5 @@ export abstract class Linker<T extends keyof AutoDocsTypes.Plugins>
     Record<string, AutoDocsTypes.LinkerObject<T>[]>
   >;
   public abstract has(doc: AutoDocsTypes.LinkerObject<T>): Promise<boolean>;
+  public abstract delete(doc: AutoDocsTypes.LinkerObject<T>): Promise<void>;
 }

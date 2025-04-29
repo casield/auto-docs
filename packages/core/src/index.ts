@@ -3,6 +3,7 @@ import { AutoDocsPlugin } from "./Plugin";
 import "./types";
 
 export * from "./Plugin";
+export * from "./VersionControl";
 export type * from "./analyzer";
 export * from "./utils";
 export * from "./linkers";
@@ -74,8 +75,15 @@ export class LambdaDocsBuilder<T extends AutoDocsTypes.AvailablePlugins> {
         "version" in docs ? (docs as { version: string }).version : "0.0.0",
       description: "TODO",
       name: "name" in docs ? (docs as { name: string }).name : "Unknown",
+
+      branch: this.config.branch || "main",
     });
 
+    return this;
+  }
+
+  public setBranch(branch: string): this {
+    this.config.branch = branch;
     return this;
   }
 
