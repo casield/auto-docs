@@ -88,8 +88,19 @@ function loadTsConfig(
   configPath: string
 ): LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins> {
   try {
-    // Register TypeScript compiler
-    register();
+    // Register TypeScript compiler with more permissive settings
+    register({
+      transpileOnly: true, // Skip type checking for better performance
+      compilerOptions: {
+        module: "NodeNext",
+        esModuleInterop: true,
+        noImplicitAny: false, // Allow implicit any to avoid compilation errors
+        skipLibCheck: true,
+      },
+    });
+
+    // Clear the require cache to ensure we get fresh modules
+    delete require.cache[require.resolve(configPath)];
 
     // Require the TypeScript file
     const configModule = require(configPath);
@@ -119,6 +130,7 @@ function loadTsConfig(
       `TypeScript config file must export a LambdaDocsBuilder instance, but got ${typeof configModule}`
     );
   } catch (error) {
+    console.error("Error loading TypeScript config:", error);
     if (error instanceof Error) {
       throw new Error(`Failed to load TypeScript config: ${error.message}`);
     }
