@@ -15,7 +15,8 @@
     "@auto-docs/serverless-dynamic": "workspace:*",
     "@auto-docs/core": "workspace:*",
     "@auto-docs/open-api": "workspace:*",
-    "@auto-docs/cli": "workspace:*"
+    "@auto-docs/cli": "workspace:*",
+    "@auto-docs/orchestrator": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.10.1",
