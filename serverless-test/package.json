@@ -12,11 +12,11 @@
   "license": "ISC",
   "dependencies": {
     "serverless": "^4.4.15",
-    "@auto-docs/serverless-dynamic": "workspace:*",
-    "@auto-docs/core": "workspace:*",
-    "@auto-docs/open-api": "workspace:*",
-    "@auto-docs/cli": "workspace:*",
-    "@auto-docs/orchestrator": "workspace:*"
+    "@auto-docs/serverless-dynamic": "*",
+    "@auto-docs/core": "*",
+    "@auto-docs/open-api": "*",
+    "@auto-docs/cli": "*",
+    "@auto-docs/orchestrator-plugin": "*"
   },
   "devDependencies": {
     "@types/node": "^22.10.1",

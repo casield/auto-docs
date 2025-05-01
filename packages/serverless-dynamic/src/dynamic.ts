@@ -2,7 +2,7 @@ import { AutoDocsBuilder } from "@auto-docs/core";
 import { APIGatewayEvent, APIGatewayProxyResultV2, Handler } from "aws-lambda";
 import { createHash } from "crypto";
 
-export const dynamicAutoDocs = <T extends "openApi">(
+export const dynamicAutoDocs = <T extends AutoDocsTypes.AvailablePlugins>(
   handler: Handler<APIGatewayEvent, APIGatewayProxyResultV2>,
   builder: AutoDocsBuilder<T>,
   branch?: string

@@ -1,12 +1,15 @@
+import "./global-types";
 import { AutoDocsBuilder, AutoDocsPlugin } from "@auto-docs/core";
 
-export class OrchestratorPlugin implements AutoDocsPlugin<never> {
-  constructor(private config: AutoDocsTypes.OrchestratorConfig) {}
-  type: never = {} as never;
+export class OrchestratorPlugin extends AutoDocsPlugin<"orchestrator"> {
+  constructor() {
+    super("orchestrator");
+  }
   private endpoints: AutoDocsTypes.EndpointConfig[] = [];
+  private config: AutoDocsTypes.OrchestratorConfig | undefined;
 
   onBuild<C>(
-    docs: never[],
+    docs: undefined[],
     builder: AutoDocsBuilder<AutoDocsTypes.AvailablePlugins>
   ): C {
     // Run all endpoints and collect results
@@ -28,11 +31,12 @@ export class OrchestratorPlugin implements AutoDocsPlugin<never> {
   onInit(builder: AutoDocsBuilder<AutoDocsTypes.AvailablePlugins>): void {
     // Get the endpoints from config
     this.endpoints = builder.config.pluginConfig?.orchestrator?.endpoints || [];
+    this.config = builder.config.pluginConfig?.orchestrator;
   }
 
   onEnd(builder: AutoDocsBuilder<AutoDocsTypes.AvailablePlugins>): void {}
 
-  onDoc(doc: never): never {
+  onDoc(doc: undefined): undefined {
     return doc;
   }
 
@@ -63,7 +67,7 @@ export class OrchestratorPlugin implements AutoDocsPlugin<never> {
     try {
       // Prepare headers by combining default headers with endpoint-specific headers
       const headers = {
-        ...this.config.defaultHeaders,
+        ...this.config?.defaultHeaders,
         ...endpoint.headers,
       };
 

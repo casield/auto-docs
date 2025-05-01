@@ -3,6 +3,9 @@ declare global {
     export interface PluginConfig {
       orchestrator: OrchestratorConfig;
     }
+    export interface Plugins {
+      orchestrator: undefined;
+    }
 
     export interface EndpointConfig {
       url: string;
