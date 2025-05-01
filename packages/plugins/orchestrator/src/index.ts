@@ -8,10 +8,10 @@ export class OrchestratorPlugin extends AutoDocsPlugin<"orchestrator"> {
   private endpoints: AutoDocsTypes.EndpointConfig[] = [];
   private config: AutoDocsTypes.OrchestratorConfig | undefined;
 
-  onBuild<C>(
+  async onBuild<C>(
     docs: undefined[],
     builder: AutoDocsBuilder<AutoDocsTypes.AvailablePlugins>
-  ): C {
+  ): Promise<C> {
     // Run all endpoints and collect results
     const results: AutoDocsTypes.OrchestratorResult = {
       responses: [],
@@ -23,6 +23,8 @@ export class OrchestratorPlugin extends AutoDocsPlugin<"orchestrator"> {
       console.warn("No endpoints configured for OrchestratorPlugin");
       return results as unknown as C;
     }
+
+    await this.runAllEndpoints();
 
     // We'll return the results of running each endpoint individually
     return results as unknown as C;

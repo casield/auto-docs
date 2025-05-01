@@ -1,4 +1,4 @@
-import { AutoDocsBuilder, MemoryLinker } from "@auto-docs/core";
+import { AutoDocsBuilder } from "@auto-docs/core";
 import { OpenApiDoc } from "@auto-docs/openapi-plugin";
 import { DynamicProxyLinker } from "@auto-docs/serverless-dynamic";
 import { OrchestratorPlugin } from "@auto-docs/orchestrator-plugin";

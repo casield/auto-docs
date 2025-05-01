@@ -1,9 +1,9 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "serverless-test",
+    "title": "My Custom Docs",
     "version": "1.0.0",
-    "description": "Serverless Service"
+    "description": "Documentation generated with a custom builder"
   },
   "paths": {
     "/hello": {
@@ -14,38 +14,16 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/com.drokt.HelloMessage"
-                    },
-                    {
-                      "$ref": "#/components/schemas/com.drokt.HelloMessage"
-                    },
-                    {
-                      "$ref": "#/components/schemas/com.drokt.HelloMessage"
+                  "type": "object",
+                  "properties": {
+                    "hello": {
+                      "type": "string"
                     }
-                  ]
+                  },
+                  "description": "Wow this is so cool!"
                 }
               }
             }
-          }
-        }
-      }
-    }
-  },
-  "components": {
-    "schemas": {
-      "com.drokt.HelloMessage": {
-        "type": "object",
-        "properties": {
-          "omg": {
-            "type": "string"
-          },
-          "omg2": {
-            "type": "string"
-          },
-          "hello": {
-            "type": "string"
           }
         }
       }
