@@ -6,6 +6,12 @@ const builder = new AutoDocsBuilder({
   name: "My Custom Docs",
   description: "Documentation generated with a custom builder",
   plugins: [OpenApiDoc],
+  pluginConfig: {
+    openApi: {
+      outputDir: "./docs",
+      version: "1.0.0",
+    },
+  },
   linker: new DynamicProxyLinker(
     "https://7lqn0bxcch.execute-api.us-east-1.amazonaws.com/proxy"
   ),
