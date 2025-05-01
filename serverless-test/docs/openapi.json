@@ -14,16 +14,82 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "hello": {
-                      "type": "string"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/com.drokt.HelloMessage"
+                    },
+                    {
+                      "$ref": "#/components/schemas/com.drokt.HappyMessage"
                     }
-                  },
-                  "description": "Wow this is so cool!"
+                  ]
                 }
               }
             }
+          },
+          "400": {
+            "description": "Response when hello is false",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/com.drokt.RejectedMessage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/com.drokt.ErrorMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "com.drokt.RejectedMessage": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "com.drokt.ErrorMessage": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      },
+      "com.drokt.HelloMessage": {
+        "type": "object",
+        "properties": {
+          "hello": {
+            "type": "string"
+          }
+        }
+      },
+      "com.drokt.HappyMessage": {
+        "type": "object",
+        "properties": {
+          "mood": {
+            "type": "string"
+          },
+          "hello": {
+            "type": "string"
           }
         }
       }

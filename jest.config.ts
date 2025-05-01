@@ -20,6 +20,14 @@ const config: Config.InitialOptions = {
       displayName: "core",
       testMatch: ["<rootDir>/packages/core/src/__test__/**/*.test.ts"],
     },
+    {
+      testPathIgnorePatterns: ["<rootDir>/node_modules/"],
+      preset: "ts-jest",
+      displayName: "orchestrator",
+      testMatch: [
+        "<rootDir>/packages/plugins/orchestrator/__tests__/**/*.test.ts",
+      ],
+    },
   ],
 };
 export default config;
