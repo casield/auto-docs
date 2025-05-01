@@ -9,16 +9,55 @@ export class MemoryLinker<
     if (!this.docs[doc.plugin]) {
       this.docs[doc.plugin] = [];
     }
-    this.docs[doc.plugin].push(doc);
+
+    const existingDocIndex = this.docs[doc.plugin].findIndex(
+      (d) =>
+        d.name === doc.name &&
+        d.plugin === doc.plugin &&
+        d.version === doc.version &&
+        d.branch === doc.branch
+    );
+    if (existingDocIndex !== -1) {
+      this.docs[doc.plugin][existingDocIndex] = doc;
+    } else {
+      this.docs[doc.plugin].push(doc);
+    }
   }
 
-  public async pull(): Promise<
-    Record<string, AutoDocsTypes.LinkerObject<T>[]>
-  > {
-    return this.docs;
+  public async pull(
+    branch?: string
+  ): Promise<Record<string, AutoDocsTypes.LinkerObject<T>[]>> {
+    if (!branch) {
+      return this.docs;
+    }
+    return Object.fromEntries(
+      Object.entries(this.docs).map(([plugin, docs]) => [
+        plugin,
+        docs.filter((doc) => doc.branch === branch),
+      ])
+    );
   }
 
   public async has(doc: AutoDocsTypes.LinkerObject<T>): Promise<boolean> {
-    return !!this.docs[doc.plugin];
+    return (
+      !!this.docs[doc.plugin] &&
+      this.docs[doc.plugin].some(
+        (d) =>
+          d.name === doc.name &&
+          d.version === doc.version &&
+          d.branch === doc.branch
+      )
+    );
+  }
+
+  public async delete(doc: AutoDocsTypes.LinkerObject<T>): Promise<void> {
+    if (this.docs[doc.plugin]) {
+      this.docs[doc.plugin] = this.docs[doc.plugin].filter(
+        (d) =>
+          d.name !== doc.name ||
+          d.version !== doc.version ||
+          d.branch !== doc.branch
+      );
+    }
   }
 }

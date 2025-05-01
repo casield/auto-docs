@@ -4,12 +4,8 @@ import { LambdaDocsBuilder } from "@auto-docs/core";
 import { OpenApiDoc } from "@auto-docs/openapi-plugin";
 import * as Dynamic from "@auto-docs/serverless-dynamic";
 
-/**
- * @auto-docs
- * This is a test function. The endpoint is /hello.
- * @name Hello Endpoint
- * @version 1.1.2
- */
+const branch = "main2";
+
 const helloBase = async (event: any) => {
   if (event.queryStringParameters && event.queryStringParameters.other) {
     return await otherImport();
@@ -18,6 +14,8 @@ const helloBase = async (event: any) => {
   return {
     body: JSON.stringify({
       hello: "World",
+      omg: "so cool",
+      omg2: 2,
     }),
     description: "Wow this is so cool!",
     schema: "com.drokt.HelloMessage",
@@ -36,31 +34,18 @@ const builder = new LambdaDocsBuilder({
   },
   linker: new Dynamic.DynamoLinker("dynamicDocs"),
   plugins: [OpenApiDoc],
+  branch,
 });
 
-export const hello = dynamicAutoDocs(helloBase, builder);
+export const hello = dynamicAutoDocs(helloBase, builder, branch);
 
-/**
- * Bye!
- * @param event
- * @returns
- *
- * @auto-docs
- * This is a test function. The endpoint is /bye.
- * @name Bye Endpoint
- * @version 1.1.2
- * @tags bye
- * @summary This is a test function.
- */
-export const bye = async (event: any) => {
-  /* @auto-docs
-   * The return response is a message.
-   * @statusCode 201
-   * @schema { message: string }
-   */
+const byeBase = async (event: any) => {
   return {
+    statusCode: 201,
     message: "Goodbye!",
   };
 };
+
+export const bye = dynamicAutoDocs(byeBase, builder, branch);
 
 export const proxy = Dynamic.lambdaProxy();

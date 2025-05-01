@@ -20,6 +20,14 @@ export const LinkerObjectEntity = new Entity(
         type: "string",
         required: true,
       },
+      id: {
+        type: "string",
+        required: true,
+      },
+      branch: {
+        type: "string",
+        required: true,
+      },
       data: {
         type: "any",
       },
@@ -28,11 +36,11 @@ export const LinkerObjectEntity = new Entity(
       pk: {
         pk: {
           field: "pk",
-          composite: ["plugin"],
+          composite: ["branch"],
         },
         sk: {
           field: "sk",
-          composite: ["name", "version"],
+          composite: ["name", "version", "plugin", "id"],
         },
       },
     },

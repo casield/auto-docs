@@ -4,8 +4,13 @@ import { createHash } from "crypto";
 
 export const dynamicAutoDocs = <T extends "openApi">(
   handler: Handler<APIGatewayEvent, APIGatewayProxyResultV2>,
-  builder: LambdaDocsBuilder<T>
+  builder: LambdaDocsBuilder<T>,
+  branch?: string
 ): Handler<APIGatewayEvent, APIGatewayProxyResultV2> => {
+  branch = branch ?? process.env.AUTODOCS_BRANCH;
+  if (!branch) {
+    throw new Error("AUTODOCS_BRANCH is not set as an environment variable");
+  }
   return async (event, context) => {
     const response = await new Promise<APIGatewayProxyResultV2>(
       (resolve, reject) => {
@@ -38,13 +43,6 @@ export const dynamicAutoDocs = <T extends "openApi">(
         throw new Error("HTTP context not found in event");
       }
 
-      const name = getHash([
-        http.method,
-        http.path,
-        Object.keys(JSON.parse(response.body || "{}")),
-        response.statusCode,
-      ]);
-
       const aggregatedResponse = {
         ...response,
         version: (response as { version: string }).version || "0.0.0",
@@ -58,7 +56,8 @@ export const dynamicAutoDocs = <T extends "openApi">(
 
       await builder.docs("openApi", {
         type: "method",
-        name: getHash([http.method, http.path]),
+        name: getHash([http.method, http.path, branch]),
+        id: getHash([http.method, http.path]),
         version: aggregatedResponse.version,
         path: {
           method: http.method as AutoDocsTypes.OpenApiMethods,
@@ -66,9 +65,17 @@ export const dynamicAutoDocs = <T extends "openApi">(
         },
       });
 
+      const name = getHash([
+        http.method,
+        http.path,
+        response.statusCode,
+        branch,
+      ]);
+
       await builder.docs("openApi", {
         type: "response",
         name,
+        id: getHash([aggregatedResponse.body]),
         version: aggregatedResponse.version,
         statusCode: response.statusCode,
         description: aggregatedResponse.description,

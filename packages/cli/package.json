@@ -1,0 +1,38 @@
+{
+  "name": "@auto-docs/cli",
+  "version": "0.1.0",
+  "description": "Interactive CLI for Auto-Docs to manage and merge documentation changes",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "auto-docs": "./dist/bin.js"
+  },
+  "scripts": {
+    "test": "jest",
+    "build": "tsup",
+    "start": "node dist/bin.js",
+    "dev": "npx tsx src/bin"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@auto-docs/core": "1.1.0",
+    "@auto-docs/serverless-dynamic": "1.1.0",
+    "chalk": "^5.3.0",
+    "commander": "^12.0.0",
+    "inquirer": "^9.2.15",
+    "ora": "^8.0.1",
+    "table": "^6.8.1",
+    "tsup": "^8.4.0"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^9.0.7",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.1",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

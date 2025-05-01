@@ -1,7 +1,6 @@
 import { LambdaDocsBuilder } from "@auto-docs/core";
 import { OpenApiDoc } from "@auto-docs/openapi-plugin";
 import Serverless from "serverless";
-import { DynamoLinker } from "./DynamoLinker";
 import { DynamicProxyLinker } from "./proxy";
 
 export * from "./dynamic";
@@ -89,6 +88,7 @@ class ServerlessPlugin {
       },
       linker: new DynamicProxyLinker(customConfig.linkerRoute),
       plugins: [OpenApiDoc],
+      branch: "niceeee",
     });
   }
 

@@ -3,6 +3,7 @@ import { AutoDocsPlugin } from "./Plugin";
 import "./types";
 
 export * from "./Plugin";
+export * from "./VersionControl";
 export type * from "./analyzer";
 export * from "./utils";
 export * from "./linkers";
@@ -35,7 +36,7 @@ export class LambdaDocsBuilder<T extends AutoDocsTypes.AvailablePlugins> {
   public async run<T extends AutoDocsTypes.AvailablePlugins>(): Promise<
     Record<T, AutoDocsTypes.PluginResponse>
   > {
-    const handlersFilter = await this._docs.pull();
+    const handlersFilter = await this._docs.pull(this.config.branch);
     const results: Record<
       AutoDocsTypes.AvailablePlugins,
       AutoDocsTypes.PluginResponse
@@ -74,8 +75,15 @@ export class LambdaDocsBuilder<T extends AutoDocsTypes.AvailablePlugins> {
         "version" in docs ? (docs as { version: string }).version : "0.0.0",
       description: "TODO",
       name: "name" in docs ? (docs as { name: string }).name : "Unknown",
+      id: "id" in docs ? (docs as { id: string }).id : "Unknown",
+      branch: this.config.branch || "main",
     });
 
+    return this;
+  }
+
+  public setBranch(branch: string): this {
+    this.config.branch = branch;
     return this;
   }
 
