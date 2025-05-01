@@ -1,11 +1,11 @@
-import { LambdaDocsBuilder } from "@auto-docs/core";
+import { AutoDocsBuilder } from "@auto-docs/core";
 import { OpenApiDoc } from "@auto-docs/openapi-plugin";
 import { dynamicAutoDocs } from "../src/dynamic";
 import { stat } from "fs";
 import path from "path";
 
 describe("Dynamic", () => {
-  const builder = new LambdaDocsBuilder({
+  const builder = new AutoDocsBuilder({
     name: "Test",
     description: "Test",
     pluginConfig: {

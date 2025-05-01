@@ -1,10 +1,10 @@
-import { LambdaDocsBuilder } from "@auto-docs/core";
+import { AutoDocsBuilder } from "@auto-docs/core";
 import { APIGatewayEvent, APIGatewayProxyResultV2, Handler } from "aws-lambda";
 import { createHash } from "crypto";
 
 export const dynamicAutoDocs = <T extends "openApi">(
   handler: Handler<APIGatewayEvent, APIGatewayProxyResultV2>,
-  builder: LambdaDocsBuilder<T>,
+  builder: AutoDocsBuilder<T>,
   branch?: string
 ): Handler<APIGatewayEvent, APIGatewayProxyResultV2> => {
   branch = branch ?? process.env.AUTODOCS_BRANCH;

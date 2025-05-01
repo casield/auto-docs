@@ -1,5 +1,5 @@
 import Serverless from "serverless";
-import { LambdaDocsBuilder, parseComment } from "@auto-docs/core";
+import { AutoDocsBuilder, parseComment } from "@auto-docs/core";
 import { OpenApiDoc } from "@auto-docs/openapi-plugin";
 
 interface Logger {
@@ -18,7 +18,7 @@ export class ServerlessPlugin {
   };
   hooks: { [key: string]: Function };
   commands: { [key: string]: any };
-  builder: LambdaDocsBuilder<"openApi"> | undefined;
+  builder: AutoDocsBuilder<"openApi"> | undefined;
 
   constructor(serverless: Serverless, options: any, utils: { log: Logger }) {
     this.serverless = serverless;
@@ -56,7 +56,7 @@ export class ServerlessPlugin {
       return;
     }
 
-    this.builder = new LambdaDocsBuilder({
+    this.builder = new AutoDocsBuilder({
       name: this.serverless.service.service || "Serverless Service",
       description: "Serverless Service",
       pluginConfig: {

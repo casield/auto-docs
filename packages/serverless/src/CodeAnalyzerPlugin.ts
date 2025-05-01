@@ -7,7 +7,7 @@ import {
   IOpenApiCommentBlockResponse,
   parseSchemaString,
 } from "@auto-docs/openapi-plugin";
-import { LambdaDocsBuilder, parseComment } from "@auto-docs/core";
+import { AutoDocsBuilder, parseComment } from "@auto-docs/core";
 import { LambdaFunctionAnalyzer } from "./analyze-function-v2";
 
 export * from "./dynamic";
@@ -28,7 +28,7 @@ class ServerlessPlugin {
   };
   hooks: { [key: string]: Function };
   commands: { [key: string]: any };
-  builder: LambdaDocsBuilder<"openApi"> | undefined;
+  builder: AutoDocsBuilder<"openApi"> | undefined;
 
   constructor(serverless: Serverless, options: any, utils: { log: Logger }) {
     this.serverless = serverless;
@@ -73,7 +73,7 @@ class ServerlessPlugin {
       customSchemas = this.loadCustomSchemas(schemaFilePath);
     }
 
-    this.builder = new LambdaDocsBuilder({
+    this.builder = new AutoDocsBuilder({
       name: projectName,
       description: projectDescription,
       plugins: [OpenApiDoc],

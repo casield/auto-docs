@@ -1,4 +1,4 @@
-import { LambdaDocsBuilder } from "@auto-docs/core";
+import { AutoDocsBuilder } from "@auto-docs/core";
 import { OpenApiDoc } from "@auto-docs/openapi-plugin";
 import Serverless from "serverless";
 import { DynamicProxyLinker } from "./proxy";
@@ -31,7 +31,7 @@ class ServerlessPlugin {
   };
   hooks: { [key: string]: Function };
   commands: { [key: string]: any };
-  builder: LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins> | undefined;
+  builder: AutoDocsBuilder<AutoDocsTypes.AvailablePlugins> | undefined;
 
   constructor(
     serverless: Serverless,
@@ -77,7 +77,7 @@ class ServerlessPlugin {
       return;
     }
 
-    this.builder = new LambdaDocsBuilder({
+    this.builder = new AutoDocsBuilder({
       name: this.serverless.service.service || "Serverless Service",
       description: "Serverless Service",
       pluginConfig: {

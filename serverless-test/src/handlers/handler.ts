@@ -1,6 +1,6 @@
 import { otherImport } from "@/other/other-import";
 import { dynamicAutoDocs } from "@auto-docs/serverless-dynamic";
-import { LambdaDocsBuilder } from "@auto-docs/core";
+import { AutoDocsBuilder } from "@auto-docs/core";
 import { OpenApiDoc } from "@auto-docs/openapi-plugin";
 import * as Dynamic from "@auto-docs/serverless-dynamic";
 
@@ -23,7 +23,7 @@ const helloBase = async (event: any) => {
   };
 };
 
-const builder = new LambdaDocsBuilder({
+const builder = new AutoDocsBuilder({
   name: "Test",
   description: "Test",
   pluginConfig: {

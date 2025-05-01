@@ -8,7 +8,7 @@ export type * from "./analyzer";
 export * from "./utils";
 export * from "./linkers";
 
-export class LambdaDocsBuilder<T extends AutoDocsTypes.AvailablePlugins> {
+export class AutoDocsBuilder<T extends AutoDocsTypes.AvailablePlugins> {
   public config: AutoDocsTypes.AutoDocsConfig<T>;
   private _docs: Linker<T>;
 

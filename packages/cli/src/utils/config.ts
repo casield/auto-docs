@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { LambdaDocsBuilder, Linker } from "@auto-docs/core";
+import { AutoDocsBuilder, Linker } from "@auto-docs/core";
 import { MemoryLinker } from "@auto-docs/core";
 import { DynamicProxyLinker } from "@auto-docs/serverless-dynamic";
 import { register } from "ts-node";
@@ -14,15 +14,15 @@ interface CliConfig {
 }
 
 /**
- * Loads a configuration file and returns a LambdaDocsBuilder
+ * Loads a configuration file and returns a AutoDocsBuilder
  * Supports both JSON and TypeScript files
  *
  * @param configPath Path to the configuration file
- * @returns A LambdaDocsBuilder instance
+ * @returns A AutoDocsBuilder instance
  */
 export function loadConfig(
   configPath: string
-): LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins> {
+): AutoDocsBuilder<AutoDocsTypes.AvailablePlugins> {
   // Try to find the config file
   const resolvedPath = path.resolve(process.cwd(), configPath);
 
@@ -43,14 +43,14 @@ export function loadConfig(
 }
 
 /**
- * Loads a JSON configuration file and creates a LambdaDocsBuilder
+ * Loads a JSON configuration file and creates a AutoDocsBuilder
  *
  * @param configPath Path to the JSON configuration file
- * @returns A LambdaDocsBuilder instance
+ * @returns A AutoDocsBuilder instance
  */
 function loadJsonConfig(
   configPath: string
-): LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins> {
+): AutoDocsBuilder<AutoDocsTypes.AvailablePlugins> {
   // Load and parse the JSON config
   const configContent = fs.readFileSync(configPath, "utf-8");
   const config: CliConfig = JSON.parse(configContent);
@@ -69,7 +69,7 @@ function loadJsonConfig(
   }
 
   // Create and return a builder
-  return new LambdaDocsBuilder({
+  return new AutoDocsBuilder({
     name: config.name,
     description: config.description,
     linker,
@@ -82,11 +82,11 @@ function loadJsonConfig(
  * Loads and executes a TypeScript configuration file
  *
  * @param configPath Path to the TypeScript configuration file
- * @returns A LambdaDocsBuilder instance
+ * @returns A AutoDocsBuilder instance
  */
 function loadTsConfig(
   configPath: string
-): LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins> {
+): AutoDocsBuilder<AutoDocsTypes.AvailablePlugins> {
   try {
     // Register TypeScript compiler with more permissive settings
     register({
@@ -105,29 +105,29 @@ function loadTsConfig(
     // Require the TypeScript file
     const configModule = require(configPath);
 
-    // Check if the module exports a LambdaDocsBuilder instance
+    // Check if the module exports a AutoDocsBuilder instance
     if (
       configModule.default &&
-      configModule.default instanceof LambdaDocsBuilder
+      configModule.default instanceof AutoDocsBuilder
     ) {
       return configModule.default;
     }
 
-    // Check if the module directly exports a LambdaDocsBuilder
-    if (configModule instanceof LambdaDocsBuilder) {
-      return configModule as LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins>;
+    // Check if the module directly exports a AutoDocsBuilder
+    if (configModule instanceof AutoDocsBuilder) {
+      return configModule as AutoDocsBuilder<AutoDocsTypes.AvailablePlugins>;
     }
 
     // Check if there's a createBuilder function
     if (typeof configModule.createBuilder === "function") {
       const builder = configModule.createBuilder();
-      if (builder instanceof LambdaDocsBuilder) {
-        return builder as LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins>;
+      if (builder instanceof AutoDocsBuilder) {
+        return builder as AutoDocsBuilder<AutoDocsTypes.AvailablePlugins>;
       }
     }
 
     throw new Error(
-      `TypeScript config file must export a LambdaDocsBuilder instance, but got ${typeof configModule}`
+      `TypeScript config file must export a AutoDocsBuilder instance, but got ${typeof configModule}`
     );
   } catch (error) {
     console.error("Error loading TypeScript config:", error);

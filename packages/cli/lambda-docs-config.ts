@@ -1,28 +1,18 @@
-import { LambdaDocsBuilder, MemoryLinker } from "@auto-docs/core";
-import { OpenApiDoc } from "@auto-docs/openapi-plugin";
-import { DynamicProxyLinker } from "@auto-docs/serverless-dynamic";
+import { AutoDocsBuilder, MemoryLinker } from "@auto-docs/core";
 
 /**
  * Example custom builder configuration file
  *
- * This file demonstrates how to create a custom LambdaDocsBuilder
+ * This file demonstrates how to create a custom AutoDocsBuilder
  * that can be loaded by the CLI.
  */
 
-// Create and export your custom LambdaDocsBuilder
-const builder = new LambdaDocsBuilder({
+// Create and export your custom AutoDocsBuilder
+const builder = new AutoDocsBuilder({
   name: "My Custom Docs",
   description: "Documentation generated with a custom builder",
-  plugins: [OpenApiDoc],
-  pluginConfig: {
-    openApi: {
-      outputDir: "./docs",
-      version: "1.0.0",
-    },
-  },
-  linker: new DynamicProxyLinker(
-    "https://7lqn0bxcch.execute-api.us-east-1.amazonaws.com/proxy"
-  ),
+  plugins: [],
+  linker: new MemoryLinker(),
   branch: "main",
 });
 

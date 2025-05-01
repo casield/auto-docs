@@ -1,6 +1,6 @@
 import "./global-types";
 import "./open-api";
-import { AutoDocsPlugin, LambdaDocsBuilder } from "@auto-docs/core";
+import { AutoDocsPlugin, AutoDocsBuilder } from "@auto-docs/core";
 import fs from "fs";
 
 export * from "./types";
@@ -16,7 +16,7 @@ export class OpenApiDoc extends AutoDocsPlugin<"openApi"> {
       | AutoDocsTypes.IDocsOpenApiMethod
       | AutoDocsTypes.IDocsOpenApiResponse
     )[],
-    builder: LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins>
+    builder: AutoDocsBuilder<AutoDocsTypes.AvailablePlugins>
   ) {
     const spec = this.createBaseSpec(builder);
 
@@ -36,7 +36,7 @@ export class OpenApiDoc extends AutoDocsPlugin<"openApi"> {
   }
 
   private createBaseSpec(
-    builder: LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins>
+    builder: AutoDocsBuilder<AutoDocsTypes.AvailablePlugins>
   ): AutoDocsTypes.OpenAPISpec {
     return {
       openapi: "3.0.0",
@@ -215,6 +215,6 @@ export class OpenApiDoc extends AutoDocsPlugin<"openApi"> {
     return doc;
   }
 
-  onStart(builder: LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins>): void {}
-  onEnd(builder: LambdaDocsBuilder<AutoDocsTypes.AvailablePlugins>): void {}
+  onStart(builder: AutoDocsBuilder<AutoDocsTypes.AvailablePlugins>): void {}
+  onEnd(builder: AutoDocsBuilder<AutoDocsTypes.AvailablePlugins>): void {}
 }
