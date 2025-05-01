@@ -2,7 +2,7 @@ import { AutoDocsBuilder } from "@auto-docs/core";
 import { APIGatewayEvent, APIGatewayProxyResultV2, Handler } from "aws-lambda";
 import { createHash } from "crypto";
 
-export const dynamicAutoDocs = <T extends "openApi">(
+export const dynamicAutoDocs = <T extends AutoDocsTypes.AvailablePlugins>(
   handler: Handler<APIGatewayEvent, APIGatewayProxyResultV2>,
   builder: AutoDocsBuilder<T>,
   branch?: string
@@ -36,6 +36,7 @@ export const dynamicAutoDocs = <T extends "openApi">(
           ? (event.requestContext.http as {
               method: string;
               path: string;
+              queryString: string;
             })
           : undefined;
 
@@ -57,7 +58,7 @@ export const dynamicAutoDocs = <T extends "openApi">(
       await builder.docs("openApi", {
         type: "method",
         name: getHash([http.method, http.path, branch]),
-        id: getHash([http.method, http.path]),
+        id: getHash([http.method, http.path, branch]),
         version: aggregatedResponse.version,
         path: {
           method: http.method as AutoDocsTypes.OpenApiMethods,
@@ -70,7 +71,15 @@ export const dynamicAutoDocs = <T extends "openApi">(
         http.path,
         response.statusCode,
         branch,
+        http.queryString,
       ]);
+
+      let parsedBody = {};
+      try {
+        parsedBody = JSON.parse(response.body || "{}");
+      } catch (e) {
+        console.error("Error parsing response body", e);
+      }
 
       await builder.docs("openApi", {
         type: "response",
@@ -84,7 +93,7 @@ export const dynamicAutoDocs = <T extends "openApi">(
           method: http.method as AutoDocsTypes.OpenApiMethods,
           path: http.path,
         },
-        schema: createPropertiesFromBody(JSON.parse(response.body || "{}")),
+        schema: createPropertiesFromBody(parsedBody),
         schemaName: aggregatedResponse.schema,
       });
     }

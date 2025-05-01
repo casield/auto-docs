@@ -4,8 +4,8 @@ import { program } from "commander";
 import { merge } from "./commands/merge";
 import { listBranches } from "./commands/list-branches";
 import { diff } from "./commands/diff";
-import { version } from "../package.json";
 import { run } from "./commands/run";
+import { version } from "../package.json";
 
 // Set up the program
 program
@@ -52,6 +52,7 @@ program
 
 program
   .command("run")
+  .description("Load a configuration file and run the documentation builder")
   .option(
     "-c, --config <path>",
     "Path to the auto-docs configuration file",

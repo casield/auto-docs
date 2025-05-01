@@ -88,7 +88,9 @@ export class DynamicProxyLinker extends Linker<AutoDocsTypes.AvailablePlugins> {
     super();
   }
 
-  async link(doc: AutoDocsTypes.LinkerObject<"openApi">): Promise<void> {
+  async link(
+    doc: AutoDocsTypes.LinkerObject<AutoDocsTypes.AvailablePlugins>
+  ): Promise<void> {
     return await fetch(`${this.url}/link`, {
       method: "POST",
       body: JSON.stringify(doc),
@@ -102,7 +104,7 @@ export class DynamicProxyLinker extends Linker<AutoDocsTypes.AvailablePlugins> {
     });
   }
   async pull(): Promise<
-    Record<string, AutoDocsTypes.LinkerObject<"openApi">[]>
+    Record<string, AutoDocsTypes.LinkerObject<AutoDocsTypes.AvailablePlugins>[]>
   > {
     const result = await fetch(`${this.url}/pull`, {
       method: "GET",
@@ -117,7 +119,9 @@ export class DynamicProxyLinker extends Linker<AutoDocsTypes.AvailablePlugins> {
     });
     return result;
   }
-  async has(doc: AutoDocsTypes.LinkerObject<"openApi">): Promise<boolean> {
+  async has(
+    doc: AutoDocsTypes.LinkerObject<AutoDocsTypes.AvailablePlugins>
+  ): Promise<boolean> {
     return await fetch(`${this.url}/has`, {
       method: "POST",
       body: JSON.stringify(doc),
@@ -134,7 +138,9 @@ export class DynamicProxyLinker extends Linker<AutoDocsTypes.AvailablePlugins> {
       .then((res) => res.exists);
   }
 
-  async delete(doc: AutoDocsTypes.LinkerObject<"openApi">): Promise<void> {
+  async delete(
+    doc: AutoDocsTypes.LinkerObject<AutoDocsTypes.AvailablePlugins>
+  ): Promise<void> {
     return await fetch(`${this.url}/delete`, {
       method: "POST",
       body: JSON.stringify(doc),

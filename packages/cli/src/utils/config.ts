@@ -88,47 +88,49 @@ function loadTsConfig(
   configPath: string
 ): AutoDocsBuilder<AutoDocsTypes.AvailablePlugins> {
   try {
-    // Register TypeScript compiler with more permissive settings
-    register({
-      transpileOnly: true, // Skip type checking for better performance
-      compilerOptions: {
-        module: "NodeNext",
-        esModuleInterop: true,
-        noImplicitAny: false, // Allow implicit any to avoid compilation errors
-        skipLibCheck: true,
-      },
-    });
+    // Disable source-map-support explicitly
+    process.env.TS_NODE_SKIP_SOURCE_MAP_SUPPORT = "true";
 
-    // Clear the require cache to ensure we get fresh modules
-    delete require.cache[require.resolve(configPath)];
+    // Instead of using register, which can cause issues with source-map-support,
+    // use a more direct approach for Node.js to handle TypeScript files
+    if (!process.execArgv.some((arg) => arg.startsWith("--require"))) {
+      try {
+        // Try to load the TypeScript file directly using Node's require
+        const configModule = require(configPath);
 
-    // Require the TypeScript file
-    const configModule = require(configPath);
+        // Process the loaded module
+        return processConfigModule(configModule);
+      } catch (directRequireError) {
+        console.warn(
+          "Direct require failed, attempting ts-node as fallback..."
+        );
+        // If direct require fails, try with minimal ts-node options
+        try {
+          // Try with absolute minimal registration
+          register({
+            transpileOnly: true,
+            skipProject: true,
+            compilerOptions: {
+              allowJs: true,
+              esModuleInterop: true,
+            },
+          });
 
-    // Check if the module exports a AutoDocsBuilder instance
-    if (
-      configModule.default &&
-      configModule.default instanceof AutoDocsBuilder
-    ) {
-      return configModule.default;
-    }
+          // Clear cache and load
+          delete require.cache[require.resolve(configPath)];
+          const configModule = require(configPath);
 
-    // Check if the module directly exports a AutoDocsBuilder
-    if (configModule instanceof AutoDocsBuilder) {
-      return configModule as AutoDocsBuilder<AutoDocsTypes.AvailablePlugins>;
-    }
-
-    // Check if there's a createBuilder function
-    if (typeof configModule.createBuilder === "function") {
-      const builder = configModule.createBuilder();
-      if (builder instanceof AutoDocsBuilder) {
-        return builder as AutoDocsBuilder<AutoDocsTypes.AvailablePlugins>;
+          return processConfigModule(configModule);
+        } catch (tsNodeError) {
+          console.error("Failed to load with ts-node:", tsNodeError);
+          throw new Error(`Cannot load TypeScript config: ${tsNodeError}`);
+        }
       }
+    } else {
+      // If we're already running with ts-node (or similar), just require directly
+      const configModule = require(configPath);
+      return processConfigModule(configModule);
     }
-
-    throw new Error(
-      `TypeScript config file must export a AutoDocsBuilder instance, but got ${typeof configModule}`
-    );
   } catch (error) {
     console.error("Error loading TypeScript config:", error);
     if (error instanceof Error) {
@@ -136,4 +138,41 @@ function loadTsConfig(
     }
     throw error;
   }
+}
+
+/**
+ * Process a loaded configuration module to extract the AutoDocsBuilder
+ *
+ * @param configModule The loaded module
+ * @returns AutoDocsBuilder instance
+ */
+function processConfigModule(
+  configModule: any
+): AutoDocsBuilder<AutoDocsTypes.AvailablePlugins> {
+  // Check if the module exports a AutoDocsBuilder instance
+  if (configModule.default && configModule.default instanceof AutoDocsBuilder) {
+    return configModule.default;
+  }
+
+  // Check if the module directly exports a AutoDocsBuilder
+  if (configModule instanceof AutoDocsBuilder) {
+    return configModule as AutoDocsBuilder<AutoDocsTypes.AvailablePlugins>;
+  }
+
+  // Check if there's a createBuilder function
+  if (typeof configModule.createBuilder === "function") {
+    const builder = configModule.createBuilder();
+    if (builder instanceof AutoDocsBuilder) {
+      return builder as AutoDocsBuilder<AutoDocsTypes.AvailablePlugins>;
+    }
+  }
+
+  // If we have data but not a builder, try to construct one
+  if (configModule.name && configModule.description) {
+    throw new Error("Invalid configuration: name and description are required");
+  }
+
+  throw new Error(
+    `TypeScript config file must export a AutoDocsBuilder instance, but got ${typeof configModule}`
+  );
 }

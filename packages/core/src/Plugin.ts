@@ -10,7 +10,7 @@ export abstract class AutoDocsPlugin<T extends keyof AutoDocsTypes.Plugins> {
   public onBuild<C>(
     docs: AutoDocsTypes.Plugins[T][],
     builder: AutoDocsBuilder<AutoDocsTypes.AvailablePlugins>
-  ): C {
+  ): C | Promise<C> {
     throw new Error("Method not implemented.");
   }
 

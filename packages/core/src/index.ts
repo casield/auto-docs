@@ -41,13 +41,14 @@ export class AutoDocsBuilder<T extends AutoDocsTypes.AvailablePlugins> {
       AutoDocsTypes.AvailablePlugins,
       AutoDocsTypes.PluginResponse
     > = {};
-    this.plugins.forEach((plugin) => {
+
+    for (const plugin of this.plugins) {
       if (handlersFilter) {
         const f = handlersFilter[plugin.type];
-        const map = f.map((item) => item.data);
-        results[plugin.type] = plugin.onBuild(map, this);
+        const map = f?.map((item) => item.data) || [];
+        results[plugin.type] = await plugin.onBuild(map, this);
       }
-    });
+    }
 
     this.plugins.forEach((plugin) => {
       plugin.onEnd(this);
