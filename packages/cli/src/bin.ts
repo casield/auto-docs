@@ -5,6 +5,7 @@ import { merge } from "./commands/merge";
 import { listBranches } from "./commands/list-branches";
 import { diff } from "./commands/diff";
 import { version } from "../package.json";
+import { run } from "./commands/run";
 
 // Set up the program
 program
@@ -48,6 +49,15 @@ program
     ".auto-docs.json"
   )
   .action(listBranches);
+
+program
+  .command("run")
+  .option(
+    "-c, --config <path>",
+    "Path to the auto-docs configuration file",
+    ".auto-docs.json"
+  )
+  .action(run);
 
 // Parse arguments
 program.parse(process.argv);
