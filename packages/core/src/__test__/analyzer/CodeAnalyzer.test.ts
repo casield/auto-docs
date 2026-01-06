@@ -40,7 +40,7 @@ describe("CodeAnalyzer", () => {
 
     expect(analysis).toBeDefined();
     expect(analysis.functions.testFunction.returnStatements.length).toBe(2);
-    expect(analysis.functions.testFunction.returnStatements[0].value).toBe(
+    expect(analysis.functions.testFunction.returnStatements[1].value).toBe(
       "myFunction()"
     );
 
