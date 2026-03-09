@@ -1,0 +1,25 @@
+{
+  "name": "serverless-app-example",
+  "version": "1.0.0",
+  "description": "Complex Serverless Framework app with AutoDocs integration",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "deploy": "serverless deploy",
+    "offline": "serverless offline start",
+    "autodocs": "node ./run-autodocs.js"
+  },
+  "dependencies": {
+    "aws-lambda": "^1.0.7",
+    "jiti": "^2.4.2"
+  },
+  "devDependencies": {
+    "@auto-docs/adapter-serverless": "*",
+    "@auto-docs/core": "*",
+    "@auto-docs/openapi-plugin": "*",
+    "@types/aws-lambda": "^8.10.119",
+    "@types/node": "^20.3.1",
+    "serverless-offline": "^12.0.0",
+    "typescript": "^5.1.3"
+  }
+}

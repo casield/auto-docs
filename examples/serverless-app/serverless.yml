@@ -1,0 +1,140 @@
+service: serverless-app-example
+
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  environment:
+    STAGE: ${self:provider.stage}
+
+functions:
+  # User Management Functions
+  getUser:
+    handler: src/handlers/users.getUser
+    events:
+      - http:
+          path: users/{id}
+          method: get
+          cors: true
+
+  listUsers:
+    handler: src/handlers/users.listUsers
+    events:
+      - http:
+          path: users
+          method: get
+          cors: true
+
+  createUser:
+    handler: src/handlers/users.createUser
+    events:
+      - http:
+          path: users
+          method: post
+          cors: true
+
+  updateUser:
+    handler: src/handlers/users.updateUser
+    events:
+      - http:
+          path: users/{id}
+          method: patch
+          cors: true
+
+  deleteUser:
+    handler: src/handlers/users.deleteUser
+    events:
+      - http:
+          path: users/{id}
+          method: delete
+          cors: true
+
+  # Product Management Functions
+  listProducts:
+    handler: src/handlers/products.listProducts
+    events:
+      - http:
+          path: products
+          method: get
+          cors: true
+
+  getProduct:
+    handler: src/handlers/products.getProduct
+    events:
+      - http:
+          path: products/{id}
+          method: get
+          cors: true
+
+  createProduct:
+    handler: src/handlers/products.createProduct
+    events:
+      - http:
+          path: products
+          method: post
+          cors: true
+
+  # Order Management Functions
+  getOrder:
+    handler: src/handlers/orders.getOrder
+    events:
+      - http:
+          path: orders/{id}
+          method: get
+          cors: true
+          authorizer:
+            name: authorizeRequest
+            type: request
+
+  listOrders:
+    handler: src/handlers/orders.listOrders
+    events:
+      - http:
+          path: orders
+          method: get
+          cors: true
+          authorizer:
+            name: authorizeRequest
+            type: request
+
+  createOrder:
+    handler: src/handlers/orders.createOrder
+    events:
+      - http:
+          path: orders
+          method: post
+          cors: true
+          authorizer:
+            name: authorizeRequest
+            type: request
+
+  updateOrder:
+    handler: src/handlers/orders.updateOrder
+    events:
+      - http:
+          path: orders/{id}
+          method: patch
+          cors: true
+          authorizer:
+            name: authorizeRequest
+            type: request
+
+  cancelOrder:
+    handler: src/handlers/orders.cancelOrder
+    events:
+      - http:
+          path: orders/{id}
+          method: delete
+          cors: true
+          authorizer:
+            name: authorizeRequest
+            type: request
+
+  # Authorization function
+  authorizeRequest:
+    handler: src/handlers/auth.authorizeRequest
+
+plugins:
+  - serverless-offline

@@ -1,7 +1,9 @@
 import fs from "fs";
 import path from "path";
-import { FrameworkAdapter, EntryPoint } from "@auto-docs/core";
-import { CodeAnalyzer } from "@auto-docs/core/src/analyzer/CodeAnalyzer";
+import { parse } from "@babel/parser";
+import traverse from "@babel/traverse";
+import * as t from "@babel/types";
+import { FrameworkAdapter, EntryPoint, CodeAnalyzer } from "@auto-docs/core";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -55,12 +57,7 @@ export class ExpressAdapter extends FrameworkAdapter {
         // Build the import map.
         analyzer.analyzeSource(source);
 
-        // Parse again for AST traversal — CodeAnalyzer already parsed it,
-        // but we need access to CallExpressions at the router level.
-        const { parse } = require("@babel/parser");
-        const traverse = require("@babel/traverse").default;
-        const t = require("@babel/types");
-
+        // Parse for AST traversal
         const ast = parse(source, {
             sourceType: "module",
             plugins: ["typescript", "jsx"],

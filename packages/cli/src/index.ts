@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // @auto-docs/cli — AutoDocs pipeline runner CLI entry point
 import { loadConfig, run } from "./runner";
 

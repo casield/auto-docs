@@ -7,4 +7,5 @@ export default defineConfig({
     splitting: false,
     clean: true,
     sourcemap: true,
+    external: ["@auto-docs/core", "@babel/parser", "@babel/traverse", "@babel/types"],
 });

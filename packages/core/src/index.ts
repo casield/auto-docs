@@ -23,7 +23,7 @@ import "./types";
  * - **`Linker`** — implement `ILinker<T>` for custom storage backends.
  */
 export * from "./Plugin";
-export type * from "./analyzer";
+export * from "./analyzer";
 export * from "./utils";
 export * from "./linkers";
 export * from "./adapters/index";
