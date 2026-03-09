@@ -4,7 +4,6 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test:serverless": "npx jest --selectProjects=serverless",
     "test:core": "npx jest --selectProjects=core",
     "build": "npx turbo run build && npm i",
     "dev": "npx turbo run dev",
