@@ -3,7 +3,6 @@ import { AutoDocsPlugin } from "./Plugin";
 import "./types";
 
 export * from "./Plugin";
-export * from "./VersionControl";
 export type * from "./analyzer";
 export * from "./utils";
 export * from "./linkers";
@@ -96,7 +95,7 @@ export class AutoDocsBuilder<T extends AutoDocsTypes.AvailablePlugins> {
 
   private isConcretePlugin(
     plugin: any
-  ): plugin is { new (): AutoDocsPlugin<T> } {
+  ): plugin is { new(): AutoDocsPlugin<T> } {
     return (
       typeof plugin === "function" && plugin.prototype instanceof AutoDocsPlugin
     );
