@@ -1,6 +1,5 @@
-export abstract class Linker<T extends keyof AutoDocsTypes.Plugins>
-  implements AutoDocsTypes.ILinker<T>
-{
+export abstract class Linker<T extends string = string>
+  implements AutoDocsTypes.ILinker<T> {
   public abstract link(doc: AutoDocsTypes.LinkerObject<T>): Promise<void>;
   public abstract pull(
     branch?: string

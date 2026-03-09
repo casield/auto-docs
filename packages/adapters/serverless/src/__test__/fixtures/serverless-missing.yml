@@ -1,0 +1,13 @@
+service: fixture-missing-service
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+
+functions:
+  doSomething:
+    handler: src/nonexistent.doSomething
+    events:
+      - http:
+          method: get
+          path: /nope

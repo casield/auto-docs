@@ -1,7 +1,7 @@
 import { Linker } from "./Linker";
 
 export class MemoryLinker<
-  T extends keyof AutoDocsTypes.Plugins
+  T extends string = string
 > extends Linker<T> {
   private docs: Record<string, AutoDocsTypes.LinkerObject<T>[]> = {};
 

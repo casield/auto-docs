@@ -1,4 +1,6 @@
 import { AutoDocsPlugin } from "./Plugin";
+import type { FrameworkAdapter } from "./adapters/FrameworkAdapter";
+import type { UnwrapRule } from "./unwrapper/HandlerUnwrapper";
 
 declare global {
   export namespace AutoDocsTypes {
@@ -8,13 +10,14 @@ declare global {
       id: string;
     }
 
-    export interface Plugins {}
+    export interface Plugins { }
 
-    export interface PluginConfig {}
+    /** @deprecated pluginConfig has been removed. Pass options to plugin constructors instead. */
+    export interface PluginConfig { }
 
-    export interface PluginResponse {}
+    export interface PluginResponse { }
 
-    export interface ILinker<T extends keyof Plugins> {
+    export interface ILinker<T extends string = string> {
       link(doc: AutoDocsTypes.LinkerObject<T>): Promise<void>;
 
       pull(
@@ -26,20 +29,36 @@ declare global {
       delete(doc: AutoDocsTypes.LinkerObject<T>): Promise<void>;
     }
 
-    export interface AutoDocsConfig<T extends keyof Plugins> {
+    /**
+     * Configuration for AutoDocsBuilder.
+     *
+     * **v2 breaking changes**:
+     * - `plugins` now accepts **instances** (`new OpenApiDoc(...)`) not class references.
+     * - `pluginConfig` has been removed — pass options to plugin constructors directly.
+     * - `adapters` and `unwrapRules` added for the CI analysis pipeline (typed in Phase 4).
+     */
+    export interface AutoDocsConfig<T extends string = string> {
       name: string;
       description: string;
-      plugins: (typeof AutoDocsPlugin<T>)[];
-      pluginConfig?: PluginConfig;
+      /** Plugin instances. E.g. `[new OpenApiDoc({ outputDir: 'docs/' })]` */
+      plugins: AutoDocsPlugin<any>[];
+      /**
+       * Framework adapters for CI analysis (e.g. ServerlessAdapter, ExpressAdapter).
+       */
+      adapters?: FrameworkAdapter[];
+      /**
+       * Handler unwrap rules to strip middleware wrappers (e.g. MIDDY_UNWRAP_RULE).
+       */
+      unwrapRules?: UnwrapRule[];
       linker?: ILinker<T>;
       branch: string;
     }
 
-    export interface LinkerObject<T extends keyof Plugins> {
-      plugin: AutoDocsTypes.AvailablePlugins;
+    export interface LinkerObject<T extends string = string> {
+      plugin: string;
       version: string;
       description: string;
-      data: Plugins[T];
+      data: T extends keyof Plugins ? Plugins[T] : any;
       name: string;
       id: string;
       branch: string;
@@ -49,4 +68,4 @@ declare global {
   }
 }
 
-export {};
+export { };
